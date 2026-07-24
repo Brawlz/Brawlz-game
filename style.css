@@ -401,9 +401,86 @@ kbd {
 
 .fists {
   position: absolute;
-  z-index: 12;
+  z-index: 13;
   inset: 0;
   pointer-events: none;
+}
+
+.player-body {
+  position: absolute;
+  z-index: 11;
+  right: 16%;
+  bottom: -22%;
+  left: 16%;
+  height: 47%;
+  pointer-events: none;
+  filter: drop-shadow(0 -8px 24px rgba(0, 0, 0, 0.55));
+  transform-origin: bottom center;
+}
+
+.player-torso {
+  position: absolute;
+  right: 18%;
+  bottom: 0;
+  left: 18%;
+  height: 100%;
+  border-radius: 48% 48% 7% 7%;
+  background:
+    radial-gradient(ellipse at 50% 5%, rgba(255, 255, 255, 0.1), transparent 36%),
+    repeating-linear-gradient(88deg, transparent 0 48px, rgba(255, 255, 255, 0.018) 49px 51px),
+    linear-gradient(110deg, #171a1d, #33383c 47%, #16191c);
+  box-shadow:
+    inset 45px 0 60px rgba(0, 0, 0, 0.42),
+    inset -45px 0 60px rgba(0, 0, 0, 0.48);
+}
+
+.shirt-seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  background: rgba(0, 0, 0, 0.36);
+  box-shadow: 3px 0 rgba(255, 255, 255, 0.035);
+}
+
+.player-shoulder {
+  position: absolute;
+  bottom: 28%;
+  width: 30%;
+  height: 54%;
+  border-radius: 50%;
+  background: linear-gradient(125deg, #34393d, #15181b 68%);
+}
+
+.player-shoulder-left {
+  left: 5%;
+  transform: rotate(18deg);
+}
+
+.player-shoulder-right {
+  right: 5%;
+  transform: rotate(-18deg);
+}
+
+.player-body.lean-left {
+  animation: bodyLeanLeft 0.36s ease-out;
+}
+
+.player-body.lean-right {
+  animation: bodyLeanRight 0.36s ease-out;
+}
+
+.player-body.body-dodge-left {
+  animation: bodyDodgeLeft 0.42s ease-out;
+}
+
+.player-body.body-dodge-right {
+  animation: bodyDodgeRight 0.42s ease-out;
+}
+
+.player-body.body-duck {
+  animation: bodyDuck 0.55s ease-out;
 }
 
 .fist {
@@ -540,6 +617,25 @@ kbd {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
+}
+
+.sound-toggle {
+  padding: 5px 9px;
+  border: 1px solid rgba(255, 179, 71, 0.5);
+  border-radius: 3px;
+  color: var(--amber);
+  background: rgba(255, 179, 71, 0.08);
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.sound-toggle[aria-pressed="true"] {
+  color: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .controls small {
@@ -762,6 +858,26 @@ kbd {
 
 @keyframes rightCharge {
   to { transform: rotate(-5deg) translateY(12px) scale(1.04); }
+}
+
+@keyframes bodyLeanLeft {
+  45% { transform: perspective(800px) translateY(-7%) translateX(7%) rotateZ(3deg) scale(1.08); }
+}
+
+@keyframes bodyLeanRight {
+  45% { transform: perspective(800px) translateY(-7%) translateX(-7%) rotateZ(-3deg) scale(1.08); }
+}
+
+@keyframes bodyDodgeLeft {
+  50% { transform: translateX(-12%) rotateZ(-4deg); }
+}
+
+@keyframes bodyDodgeRight {
+  50% { transform: translateX(12%) rotateZ(4deg); }
+}
+
+@keyframes bodyDuck {
+  50% { transform: translateY(24%) scaleX(1.08); }
 }
 
 @keyframes damage {

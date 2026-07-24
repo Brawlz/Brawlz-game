@@ -36,12 +36,22 @@ Then open `http://localhost:8080`.
 ## Stage-one systems
 
 - First-person visible fists with separate charge and strike states
+- Visible shoulders and torso that drive forward with punches and move with defense
 - Health, stamina, punch-power, timer, injury, and result HUD
 - Telegraph-driven opponent AI that becomes faster as it takes damage
 - Directional dodge, duck, and high-guard defense
 - Discoverable rib weak spot revealed by a specific opponent wind-up
 - Progressive opponent injury states and knockout animation
 - Accuracy, completion time, and weak-hit results
+- Blues-bar music and impact/hurt audio system with synthesized fallbacks
+
+## Custom audio
+
+Add your own licensed MP3 files to [`public/audio`](./public/audio). The exact
+filenames for music, left/right punches, player hurt, opponent hurt, dodge, and
+knockout sounds are listed in [`public/audio/README.md`](./public/audio/README.md).
+The game automatically attempts to use those recordings and falls back to
+procedural audio when a file is not present.
 
 The generated environment and character art are original assets created for this
 prototype.

@@ -19,6 +19,7 @@ const elements = {
   enemyHealth: $("#enemy-health"),
   injuryMeter: $("#injury-meter"),
   timer: $("#timer"),
+  playerBody: $("#player-body"),
   leftFist: $(".left-fist"),
   rightFist: $(".right-fist"),
   leftCharge: $("#left-charge"),
@@ -31,6 +32,161 @@ const elements = {
   resultTime: $("#result-time"),
   resultAccuracy: $("#result-accuracy"),
   resultWeak: $("#result-weak"),
+  soundToggle: $("#sound-toggle"),
+};
+
+const AUDIO = {
+  music: "./public/audio/bar-blues.mp3",
+  punchLeft: "./public/audio/punch-left.mp3",
+  punchRight: "./public/audio/punch-right.mp3",
+  opponentHurtLight: "./public/audio/opponent-hurt-01.mp3",
+  opponentHurtHeavy: "./public/audio/opponent-hurt-02.mp3",
+  playerHurtLight: "./public/audio/player-hurt-01.mp3",
+  playerHurtHeavy: "./public/audio/player-hurt-02.mp3",
+  dodge: "./public/audio/dodge.mp3",
+  knockout: "./public/audio/knockout.mp3",
+};
+
+const sound = {
+  context: null,
+  master: null,
+  musicElement: null,
+  musicFallbackTimer: null,
+  muted: false,
+  customAvailability: new Map(),
+
+  init() {
+    if (!this.context) {
+      this.context = new (window.AudioContext || window.webkitAudioContext)();
+      this.master = this.context.createGain();
+      this.master.gain.value = 0.72;
+      this.master.connect(this.context.destination);
+    }
+    if (this.context.state === "suspended") this.context.resume();
+  },
+
+  setMuted(muted) {
+    this.muted = muted;
+    if (this.master) this.master.gain.value = muted ? 0 : 0.72;
+    if (this.musicElement) this.musicElement.muted = muted;
+    elements.soundToggle.textContent = muted ? "SOUND OFF" : "SOUND ON";
+    elements.soundToggle.setAttribute("aria-pressed", String(muted));
+  },
+
+  startMusic() {
+    if (this.musicElement || this.musicFallbackTimer) return;
+    const music = new Audio(AUDIO.music);
+    music.loop = true;
+    music.volume = 0.3;
+    music.muted = this.muted;
+    music.addEventListener(
+      "error",
+      () => {
+        this.musicElement = null;
+        this.startFallbackBlues();
+      },
+      { once: true },
+    );
+    this.musicElement = music;
+    music.play().catch(() => {
+      this.musicElement = null;
+      this.startFallbackBlues();
+    });
+  },
+
+  startFallbackBlues() {
+    if (this.musicFallbackTimer || this.muted) return;
+    this.playBluesPhrase();
+    this.musicFallbackTimer = setInterval(() => this.playBluesPhrase(), 7600);
+  },
+
+  playBluesPhrase() {
+    if (!this.context || this.muted) return;
+    const root = 146.83;
+    const notes = [1, 1.189, 1.335, 1.498, 1.335, 1.189, 1, 0.89];
+    notes.forEach((ratio, index) => {
+      const start = this.context.currentTime + index * 0.45;
+      const osc = this.context.createOscillator();
+      const gain = this.context.createGain();
+      const filter = this.context.createBiquadFilter();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(root * ratio, start);
+      osc.frequency.linearRampToValueAtTime(root * ratio * 0.985, start + 0.28);
+      filter.type = "lowpass";
+      filter.frequency.value = 1100;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.035, start + 0.035);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.34);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.master);
+      osc.start(start);
+      osc.stop(start + 0.36);
+    });
+  },
+
+  custom(path, volume = 0.8) {
+    if (this.muted || this.customAvailability.get(path) === false) return false;
+    const audio = new Audio(path);
+    audio.volume = volume;
+    audio.addEventListener("canplaythrough", () => this.customAvailability.set(path, true), {
+      once: true,
+    });
+    audio.addEventListener("error", () => this.customAvailability.set(path, false), { once: true });
+    audio.play().catch(() => this.customAvailability.set(path, false));
+    return this.customAvailability.get(path) === true;
+  },
+
+  impact(power = 0.6) {
+    if (!this.context || this.muted) return;
+    const duration = 0.12 + power * 0.09;
+    const length = Math.floor(this.context.sampleRate * duration);
+    const buffer = this.context.createBuffer(1, length, this.context.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i += 1) {
+      const t = i / length;
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 4);
+    }
+    const source = this.context.createBufferSource();
+    const filter = this.context.createBiquadFilter();
+    const gain = this.context.createGain();
+    filter.type = "lowpass";
+    filter.frequency.value = 190 + power * 260;
+    gain.gain.value = 0.38 + power * 0.38;
+    source.buffer = buffer;
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.master);
+    source.start();
+  },
+
+  whoosh() {
+    if (!this.context || this.muted) return;
+    const osc = this.context.createOscillator();
+    const gain = this.context.createGain();
+    const now = this.context.currentTime;
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(170, now);
+    osc.frequency.exponentialRampToValueAtTime(70, now + 0.14);
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+    osc.connect(gain);
+    gain.connect(this.master);
+    osc.start();
+    osc.stop(now + 0.16);
+  },
+
+  hurt(isPlayer, heavy = false) {
+    const path = isPlayer
+      ? heavy
+        ? AUDIO.playerHurtHeavy
+        : AUDIO.playerHurtLight
+      : heavy
+        ? AUDIO.opponentHurtHeavy
+        : AUDIO.opponentHurtLight;
+    this.custom(path, 0.88);
+    this.impact(heavy ? 1 : 0.58);
+  },
 };
 
 const ATTACKS = [
@@ -166,11 +322,14 @@ function resetGame() {
   elements.leftChargeWrap.classList.remove("active");
   elements.rightChargeWrap.classList.remove("active");
   elements.arena.classList.remove("dodge-left", "dodge-right", "duck", "guard");
+  elements.playerBody.className = "player-body";
   elements.objective.textContent = "Watch his shoulders. Every fighter gives something away.";
   updateHud();
 }
 
 function startGame() {
+  sound.init();
+  sound.startMusic();
   resetGame();
   state.running = true;
   elements.startScreen.classList.add("hidden");
@@ -245,10 +404,12 @@ async function enemyAttack() {
     state.playerHealth = clamp(state.playerHealth - chipDamage, 0, 100);
     if (guarded) state.playerStamina = clamp(state.playerStamina - 12, 0, 100);
     setMessage(guarded ? "BLOCKED — BUT IT COSTS YOU" : "CLEAN EVADE");
+    sound.impact(guarded ? 0.38 : 0.18);
   } else {
     state.playerHealth = clamp(state.playerHealth - attack.damage, 0, 100);
     resetAnimation(elements.damageFlash, "active");
     setMessage(`${attack.label} CONNECTS`);
+    sound.hurt(true, attack.damage >= 20);
   }
 
   updateHud();
@@ -284,7 +445,19 @@ function defend(type) {
   state.defenseUntil = performance.now() + (type === "guard" ? 480 : 420);
   const className = type === "left" ? "dodge-left" : type === "right" ? "dodge-right" : type;
   resetAnimation(elements.arena, className);
+  const bodyClass =
+    type === "left"
+      ? "body-dodge-left"
+      : type === "right"
+        ? "body-dodge-right"
+        : type === "duck"
+          ? "body-duck"
+          : null;
+  if (bodyClass) resetAnimation(elements.playerBody, bodyClass);
+  sound.custom(AUDIO.dodge, 0.42);
+  sound.whoosh();
   setTimeout(() => elements.arena.classList.remove(className), 580);
+  if (bodyClass) setTimeout(() => elements.playerBody.classList.remove(bodyClass), 580);
   updateHud();
 }
 
@@ -327,6 +500,8 @@ function releasePunch(side) {
 
   fist.classList.remove("charging");
   resetAnimation(fist, "punch");
+  const leanClass = side === "left" ? "lean-left" : "lean-right";
+  resetAnimation(elements.playerBody, leanClass);
   wrap.classList.remove("active");
   bar.style.width = "0";
   state.punches += 1;
@@ -351,19 +526,25 @@ function releasePunch(side) {
       resetAnimation(elements.enemy, "weak-stagger");
       setMessage(`RIB SHOT · ${Math.round(damage)} DAMAGE`);
       elements.objective.textContent = "You found it. Make him dip, then punish the right ribs.";
+      sound.custom(side === "left" ? AUDIO.punchLeft : AUDIO.punchRight, 0.9);
+      sound.hurt(false, true);
     } else {
       resetAnimation(elements.enemy, "stagger");
       setMessage(charge > 0.82 ? "HEAVY SHOT" : "CLEAN HIT");
+      sound.custom(side === "left" ? AUDIO.punchLeft : AUDIO.punchRight, 0.82);
+      sound.hurt(false, charge > 0.82);
     }
     state.enemyHealth = clamp(state.enemyHealth - damage, 0, 100);
     resetAnimation(elements.hitFlash, "active");
   } else {
     setMessage(blocked ? "HE READ IT" : "MISSED");
+    sound.whoosh();
   }
 
   updateHud();
   setTimeout(() => {
     fist.classList.remove("punch");
+    elements.playerBody.classList.remove(leanClass);
     elements.enemy.classList.remove("stagger", "weak-stagger");
     if (state.running && !state.enemyBusy) elements.enemy.classList.add("idle");
   }, 640);
@@ -391,6 +572,8 @@ async function finishFight(won, reason) {
       "attack-uppercut",
     );
     elements.enemy.classList.add("knockout");
+    sound.custom(AUDIO.knockout, 1);
+    sound.impact(1);
     setMessage("KNOCKOUT");
     await sleep(1650);
   }
@@ -426,6 +609,11 @@ function onKeyUp(event) {
 
 elements.startButton.addEventListener("click", startGame);
 elements.restartButton.addEventListener("click", startGame);
+elements.soundToggle.addEventListener("click", () => {
+  sound.init();
+  sound.setMuted(!sound.muted);
+  if (!sound.muted) sound.startMusic();
+});
 window.addEventListener("keydown", onKeyDown);
 window.addEventListener("keyup", onKeyUp);
 window.addEventListener("blur", () => {
