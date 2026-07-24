@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#090705" />
+    <title>BRAWLZ — Last Call</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main id="game" class="game" aria-label="Brawlz first-person fighting game">
+      <div class="arena" id="arena">
+        <div class="vignette"></div>
+        <div class="damage-flash" id="damage-flash"></div>
+        <div class="hit-flash" id="hit-flash"></div>
+
+        <header class="top-hud">
+          <section class="fighter-card player-card">
+            <div class="fighter-label">
+              <span class="eyebrow">THE CHALLENGER</span>
+              <strong>YOU</strong>
+            </div>
+            <div class="bars">
+              <div class="bar health" aria-label="Player health">
+                <span id="player-health"></span>
+              </div>
+              <div class="bar stamina" aria-label="Player stamina">
+                <span id="player-stamina"></span>
+              </div>
+            </div>
+          </section>
+
+          <section class="round-info">
+            <span>ROUND</span>
+            <strong>1</strong>
+            <time id="timer">01:30</time>
+          </section>
+
+          <section class="fighter-card enemy-card">
+            <div class="fighter-label">
+              <span class="eyebrow">THE HOUSE</span>
+              <strong>MACK “LAST CALL” DOYLE</strong>
+            </div>
+            <div class="bars">
+              <div class="bar health enemy-health" aria-label="Opponent health">
+                <span id="enemy-health"></span>
+              </div>
+              <div class="injury-meter" id="injury-meter">COMPOSED</div>
+            </div>
+          </section>
+        </header>
+
+        <aside class="objective-panel">
+          <span class="eyebrow">STAGE 01 · THE LAST CALL</span>
+          <p id="objective">Watch his shoulders. Every fighter gives something away.</p>
+        </aside>
+
+        <div class="combat-space" id="combat-space">
+          <div class="enemy-shadow"></div>
+          <div class="enemy" id="enemy">
+            <div class="weak-spot" id="weak-spot" aria-hidden="true"></div>
+            <div class="injury injury-face"></div>
+            <div class="injury injury-ribs"></div>
+            <img
+              src="./public/assets/opponent.png"
+              alt="Mack Doyle in a guarded fighting stance"
+              draggable="false"
+            />
+          </div>
+
+          <div class="tell" id="tell">
+            <span id="tell-label">LEFT HOOK</span>
+          </div>
+        </div>
+
+        <div class="fists" id="fists" aria-hidden="true">
+          <div class="fist left-fist">
+            <img src="./public/assets/fist.png" alt="" draggable="false" />
+          </div>
+          <div class="fist right-fist">
+            <img src="./public/assets/fist.png" alt="" draggable="false" />
+          </div>
+        </div>
+
+        <div class="charge-wrap left-charge" id="left-charge-wrap">
+          <span>LEFT POWER</span>
+          <div class="charge-bar"><i id="left-charge"></i></div>
+        </div>
+        <div class="charge-wrap right-charge" id="right-charge-wrap">
+          <span>RIGHT POWER</span>
+          <div class="charge-bar"><i id="right-charge"></i></div>
+        </div>
+
+        <div class="message" id="message" aria-live="polite"></div>
+
+        <footer class="controls">
+          <div><kbd>←</kbd><kbd>→</kbd><span>DODGE</span></div>
+          <div><kbd>↓</kbd><span>DUCK</span></div>
+          <div><kbd>↑</kbd><span>HIGH GUARD</span></div>
+          <div><kbd>J</kbd><span>LEFT PUNCH</span></div>
+          <div><kbd>K</kbd><span>RIGHT PUNCH</span></div>
+          <small>Hold J or K to charge · release to strike</small>
+        </footer>
+      </div>
+
+      <section class="start-screen" id="start-screen">
+        <div class="start-card">
+          <span class="chapter">BRAWLZ · CHAPTER ONE</span>
+          <h1>LAST<br /><em>CALL</em></h1>
+          <p>
+            Nobody owns this room. Mack Doyle thinks otherwise. Read his movement,
+            protect your stamina, and find the opening he cannot hide.
+          </p>
+          <button id="start-button">STEP INTO THE BAR</button>
+          <span class="start-hint">Keyboard required · headphones recommended</span>
+        </div>
+      </section>
+
+      <section class="end-screen hidden" id="end-screen">
+        <div class="end-card">
+          <span class="chapter" id="end-kicker">STAGE COMPLETE</span>
+          <h2 id="end-title">KNOCKOUT</h2>
+          <p id="end-copy">Mack hit the floor. The room knows your name now.</p>
+          <dl>
+            <div><dt>TIME</dt><dd id="result-time">00:00</dd></div>
+            <div><dt>ACCURACY</dt><dd id="result-accuracy">0%</dd></div>
+            <div><dt>WEAK HITS</dt><dd id="result-weak">0</dd></div>
+          </dl>
+          <button id="restart-button">FIGHT AGAIN</button>
+        </div>
+      </section>
+    </main>
+    <script src="./game.js"></script>
+  </body>
+</html>
