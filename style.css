@@ -99,6 +99,48 @@ kbd {
   animation: hitFlash 0.2s ease-out;
 }
 
+.impact-burst {
+  position: absolute;
+  z-index: 14;
+  top: 30%;
+  left: 50%;
+  width: 74px;
+  aspect-ratio: 1;
+  border: 4px solid rgba(255, 224, 167, 0.95);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.15);
+  box-shadow:
+    0 0 18px rgba(255, 194, 93, 0.95),
+    inset 0 0 18px rgba(255, 255, 255, 0.75);
+}
+
+.impact-burst::before,
+.impact-burst::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 4px;
+  content: "";
+  background: linear-gradient(90deg, transparent, #fff1c7, transparent);
+  transform: translate(-50%, -50%) rotate(35deg);
+}
+
+.impact-burst::after {
+  transform: translate(-50%, -50%) rotate(-35deg);
+}
+
+.impact-burst.active {
+  animation: impactBurst 0.34s ease-out;
+}
+
+.impact-burst.weak {
+  border-color: #ffb347;
+  box-shadow: 0 0 30px #ff6a2a, inset 0 0 20px #fff;
+}
+
 .top-hud {
   position: absolute;
   z-index: 30;
@@ -409,20 +451,13 @@ kbd {
   letter-spacing: 0.14em;
 }
 
-.fists {
-  position: absolute;
-  z-index: 13;
-  inset: 0;
-  pointer-events: none;
-}
-
 .player-body {
   position: absolute;
   z-index: 11;
-  bottom: 100px;
+  bottom: 82px;
   left: 50%;
-  width: clamp(310px, 37vw, 560px);
-  height: min(72vh, 790px);
+  width: clamp(260px, 29vw, 430px);
+  height: min(61vh, 670px);
   pointer-events: none;
   filter:
     drop-shadow(0 18px 20px rgba(0, 0, 0, 0.52))
@@ -447,12 +482,26 @@ kbd {
   animation: playerStepIn 0.82s cubic-bezier(0.18, 0.76, 0.2, 1) forwards;
 }
 
-.player-body.lean-left {
-  animation: bodyLeanLeft 0.36s ease-out;
+.player-body.entered img {
+  animation: playerFootwork 0.78s ease-in-out infinite alternate;
 }
 
-.player-body.lean-right {
-  animation: bodyLeanRight 0.36s ease-out;
+.player-body.player-punch-left,
+.player-body.player-punch-right {
+  animation: playerPunchDrive 0.42s cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.player-body.player-punch-left img,
+.player-body.player-punch-right img {
+  animation: none;
+}
+
+.player-body.charging-left {
+  transform: translateX(-52%) translateY(2%) rotate(-2deg);
+}
+
+.player-body.charging-right {
+  transform: translateX(-48%) translateY(2%) rotate(2deg);
 }
 
 .player-body.body-dodge-left {
@@ -469,52 +518,6 @@ kbd {
 
 .player-body.body-guard {
   animation: bodyGuard 0.48s ease-out;
-}
-
-.fist {
-  position: absolute;
-  bottom: 2vh;
-  width: clamp(250px, 28vw, 430px);
-  opacity: 0;
-  transform-origin: bottom center;
-  transition: opacity 0.08s ease;
-}
-
-.fist img {
-  display: block;
-  width: 100%;
-  filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.62));
-  user-select: none;
-}
-
-.left-fist {
-  left: -8vw;
-  transform: scaleX(-1) rotate(-9deg);
-}
-
-.right-fist {
-  right: -8vw;
-  transform: rotate(-9deg);
-}
-
-.left-fist.punch {
-  opacity: 1;
-  animation: leftPunch 0.3s ease-out;
-}
-
-.right-fist.punch {
-  opacity: 1;
-  animation: rightPunch 0.3s ease-out;
-}
-
-.left-fist.charging {
-  opacity: 0.72;
-  animation: leftCharge 0.5s ease-in-out infinite alternate;
-}
-
-.right-fist.charging {
-  opacity: 0.72;
-  animation: rightCharge 0.5s ease-in-out infinite alternate;
 }
 
 .charge-wrap {
@@ -851,28 +854,10 @@ kbd {
   100% { transform: translateX(-50%) translateY(75%) rotate(-82deg) scale(0.9); opacity: 0.55; }
 }
 
-@keyframes leftPunch {
-  45% { transform: translate(39vw, -35vh) scaleX(-1) rotate(5deg) scale(0.56); }
-}
-
-@keyframes rightPunch {
-  45% { transform: translate(-39vw, -35vh) rotate(5deg) scale(0.56); }
-}
-
-@keyframes leftCharge {
-  to { transform: scaleX(-1) rotate(-5deg) translateY(12px) scale(1.04); }
-}
-
-@keyframes rightCharge {
-  to { transform: rotate(-5deg) translateY(12px) scale(1.04); }
-}
-
-@keyframes bodyLeanLeft {
-  45% { transform: perspective(800px) translateX(-43%) translateY(-7%) rotateZ(3deg) scale(1.08); }
-}
-
-@keyframes bodyLeanRight {
-  45% { transform: perspective(800px) translateX(-57%) translateY(-7%) rotateZ(-3deg) scale(1.08); }
+@keyframes playerPunchDrive {
+  0% { transform: translateX(-50%) translateY(0) scale(1); }
+  42%, 62% { transform: translateX(-50%) translateY(-9%) scale(1.12); }
+  100% { transform: translateX(-50%) translateY(0) scale(1); }
 }
 
 @keyframes bodyDodgeLeft {
@@ -907,6 +892,38 @@ kbd {
     opacity: 1;
     transform: translateX(-50%) translateY(0) scale(1);
   }
+}
+
+@keyframes playerFootwork {
+  from { transform: translateY(0) rotate(-0.35deg); }
+  to { transform: translateY(-1.8%) rotate(0.35deg); }
+}
+
+@keyframes impactBurst {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.15); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(0.7); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.75); }
+}
+
+@keyframes impactLight {
+  0%, 100% { transform: translate(0, 0); }
+  30% { transform: translate(-5px, 3px); }
+  60% { transform: translate(4px, -2px); }
+}
+
+@keyframes impactHeavy {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-11px, 6px) rotate(-0.35deg); }
+  45% { transform: translate(9px, -5px) rotate(0.3deg); }
+  70% { transform: translate(-5px, 3px); }
+}
+
+.arena.impact-light {
+  animation: impactLight 0.22s linear;
+}
+
+.arena.impact-heavy {
+  animation: impactHeavy 0.32s linear;
 }
 
 @keyframes damage {
@@ -1045,22 +1062,9 @@ kbd {
   }
 
   .player-body {
-    bottom: 128px;
-    width: min(56vw, 390px);
-    height: min(58vh, 600px);
-  }
-
-  .fist {
-    bottom: 5vh;
-    width: min(62vw, 390px);
-  }
-
-  .left-fist {
-    left: -24vw;
-  }
-
-  .right-fist {
-    right: -24vw;
+    bottom: 118px;
+    width: min(43vw, 300px);
+    height: min(49vh, 510px);
   }
 
   .charge-wrap {
@@ -1273,21 +1277,9 @@ kbd {
   }
 
   .player-body {
-    bottom: -27%;
-    height: 49%;
-  }
-
-  .fist {
-    bottom: -8vh;
-    width: min(43vw, 430px);
-  }
-
-  .left-fist {
-    left: -12vw;
-  }
-
-  .right-fist {
-    right: -12vw;
+    bottom: 72px;
+    width: min(28vw, 270px);
+    height: 60vh;
   }
 
   .mobile-controls {

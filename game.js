@@ -22,14 +22,14 @@ const elements = {
   objective: $("#objective"),
   damageFlash: $("#damage-flash"),
   hitFlash: $("#hit-flash"),
+  impactBurst: $("#impact-burst"),
   playerHealth: $("#player-health"),
   playerStamina: $("#player-stamina"),
   enemyHealth: $("#enemy-health"),
   injuryMeter: $("#injury-meter"),
   timer: $("#timer"),
   playerBody: $("#player-body"),
-  leftFist: $(".left-fist"),
-  rightFist: $(".right-fist"),
+  playerSprite: $("#player-sprite"),
   leftCharge: $("#left-charge"),
   rightCharge: $("#right-charge"),
   leftChargeWrap: $("#left-charge-wrap"),
@@ -50,13 +50,23 @@ const ENEMY_SPRITES = {
   block: "./public/assets/opponent-block.png",
 };
 
-Object.values(ENEMY_SPRITES).forEach((src) => {
+const PLAYER_SPRITES = {
+  guard: "./public/assets/player-back-step.png",
+  left: "./public/assets/player-punch-left.png",
+  right: "./public/assets/player-punch-right.png",
+};
+
+[...Object.values(ENEMY_SPRITES), ...Object.values(PLAYER_SPRITES)].forEach((src) => {
   const image = new Image();
   image.src = src;
 });
 
 function setEnemyPose(pose) {
   elements.enemySprite.src = ENEMY_SPRITES[pose] || ENEMY_SPRITES.guard;
+}
+
+function setPlayerPose(pose) {
+  elements.playerSprite.src = PLAYER_SPRITES[pose] || PLAYER_SPRITES.guard;
 }
 
 const AUDIO = {
@@ -282,6 +292,17 @@ function resetAnimation(element, className) {
   element.classList.add(className);
 }
 
+function showImpact(power = 0.5, weak = false) {
+  elements.impactBurst.classList.toggle("weak", weak);
+  resetAnimation(elements.impactBurst, "active");
+  resetAnimation(elements.hitFlash, "active");
+  resetAnimation(elements.arena, power > 0.75 ? "impact-heavy" : "impact-light");
+  setTimeout(() => {
+    elements.arena.classList.remove("impact-heavy", "impact-light");
+    elements.impactBurst.classList.remove("active", "weak");
+  }, 360);
+}
+
 function setMessage(text) {
   elements.message.textContent = text;
   elements.message.classList.remove("show");
@@ -344,10 +365,9 @@ function resetGame() {
 
   elements.enemy.className = "enemy idle";
   setEnemyPose("guard");
+  setPlayerPose("guard");
   elements.weakSpot.className = "weak-spot";
   elements.tell.classList.remove("visible");
-  elements.leftFist.classList.remove("punch", "charging");
-  elements.rightFist.classList.remove("punch", "charging");
   elements.leftChargeWrap.classList.remove("active");
   elements.rightChargeWrap.classList.remove("active");
   elements.arena.classList.remove("dodge-left", "dodge-right", "duck", "guard");
@@ -499,9 +519,8 @@ function defend(type) {
 function beginCharge(side) {
   if (!state.running || state.charge[side] || state.playerStamina < 6) return;
   state.charge[side] = performance.now();
-  const fist = side === "left" ? elements.leftFist : elements.rightFist;
   const wrap = side === "left" ? elements.leftChargeWrap : elements.rightChargeWrap;
-  fist.classList.add("charging");
+  elements.playerBody.classList.add(`charging-${side}`);
   wrap.classList.add("active");
   clearTimeout(state.blockTimer);
   state.blockTimer = setTimeout(() => {
@@ -544,14 +563,13 @@ function releasePunch(side) {
   const held = performance.now() - state.charge[side];
   state.charge[side] = null;
   const charge = clamp(held / 1200, 0.12, 1);
-  const fist = side === "left" ? elements.leftFist : elements.rightFist;
   const bar = side === "left" ? elements.leftCharge : elements.rightCharge;
   const wrap = side === "left" ? elements.leftChargeWrap : elements.rightChargeWrap;
 
-  fist.classList.remove("charging");
-  resetAnimation(fist, "punch");
-  const leanClass = side === "left" ? "lean-left" : "lean-right";
-  resetAnimation(elements.playerBody, leanClass);
+  elements.playerBody.classList.remove(`charging-${side}`);
+  const punchClass = side === "left" ? "player-punch-left" : "player-punch-right";
+  setPlayerPose(side);
+  resetAnimation(elements.playerBody, punchClass);
   wrap.classList.remove("active");
   bar.style.width = "0";
   state.punches += 1;
@@ -564,8 +582,8 @@ function releasePunch(side) {
     !state.enemyVulnerable &&
     (
       state.enemyBlocking ||
-      (state.enemyBusy && Math.random() < 0.48) ||
-      (!state.enemyBusy && Math.random() < 0.32)
+      (state.enemyBusy && Math.random() < 0.3) ||
+      (!state.enemyBusy && Math.random() < 0.12)
     );
   const weakHit =
     side === "left" &&
@@ -580,18 +598,23 @@ function releasePunch(side) {
       state.weakHits += 1;
       elements.enemy.classList.remove("idle");
       resetAnimation(elements.enemy, "weak-stagger");
-      setMessage(`RIB SHOT · ${Math.round(damage)} DAMAGE`);
+      setTimeout(() => setMessage(`RIB SHOT · ${Math.round(damage)} DAMAGE`), 360);
       elements.objective.textContent = "You found it. Make him dip, then punish the right ribs.";
       sound.custom(side === "left" ? AUDIO.punchLeft : AUDIO.punchRight, 0.9);
-      sound.hurt(false, true);
+      setTimeout(() => {
+        showImpact(1, true);
+        sound.hurt(false, true);
+      }, 115);
     } else {
       resetAnimation(elements.enemy, "stagger");
-      setMessage(charge > 0.82 ? "HEAVY SHOT" : "CLEAN HIT");
+      setTimeout(() => setMessage(charge > 0.82 ? "HEAVY SHOT" : "CLEAN HIT"), 360);
       sound.custom(side === "left" ? AUDIO.punchLeft : AUDIO.punchRight, 0.82);
-      sound.hurt(false, charge > 0.82);
+      setTimeout(() => {
+        showImpact(charge, false);
+        sound.hurt(false, charge > 0.82);
+      }, 115);
     }
     state.enemyHealth = clamp(state.enemyHealth - damage, 0, 100);
-    resetAnimation(elements.hitFlash, "active");
   } else {
     setMessage(blocked ? "BLOCKED BY HIS ARMS" : "MISSED");
     if (blocked) {
@@ -606,8 +629,8 @@ function releasePunch(side) {
 
   updateHud();
   setTimeout(() => {
-    fist.classList.remove("punch");
-    elements.playerBody.classList.remove(leanClass);
+    elements.playerBody.classList.remove(punchClass);
+    setPlayerPose("guard");
     elements.enemy.classList.remove("stagger", "weak-stagger", "blocking");
     state.enemyBlocking = false;
     setEnemyPose("guard");

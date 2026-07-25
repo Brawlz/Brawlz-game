@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./style.css?v=player-step-in-1" />
+    <link rel="stylesheet" href="./style.css?v=body-punch-impact-1" />
   </head>
   <body>
     <main id="game" class="game" aria-label="Brawlz first-person fighting game">
@@ -74,6 +74,7 @@
               draggable="false"
             />
           </div>
+          <div class="impact-burst" id="impact-burst" aria-hidden="true"></div>
 
           <div class="tell" id="tell">
             <span id="tell-label">LEFT HOOK</span>
@@ -82,19 +83,11 @@
 
         <div class="player-body" id="player-body" aria-hidden="true">
           <img
+            id="player-sprite"
             src="./public/assets/player-back-step.png"
             alt=""
             draggable="false"
           />
-        </div>
-
-        <div class="fists" id="fists" aria-hidden="true">
-          <div class="fist left-fist">
-            <img src="./public/assets/fist.png" alt="" draggable="false" />
-          </div>
-          <div class="fist right-fist">
-            <img src="./public/assets/fist.png" alt="" draggable="false" />
-          </div>
         </div>
 
         <div class="charge-wrap left-charge" id="left-charge-wrap">
@@ -183,6 +176,6 @@
         </div>
       </section>
     </main>
-    <script src="./game.js?v=player-step-in-1"></script>
+    <script src="./game.js?v=body-punch-impact-1"></script>
   </body>
 </html>
