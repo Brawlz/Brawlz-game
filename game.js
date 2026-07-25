@@ -607,6 +607,45 @@ function onKeyUp(event) {
   if (event.code === "KeyK") releasePunch("right");
 }
 
+function bindTouchControls() {
+  document.querySelectorAll("[data-defense]").forEach((button) => {
+    button.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      button.classList.add("pressed");
+      button.setPointerCapture?.(event.pointerId);
+      defend(button.dataset.defense);
+    });
+    const release = () => button.classList.remove("pressed");
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointercancel", release);
+    button.addEventListener("pointerleave", release);
+  });
+
+  document.querySelectorAll("[data-punch]").forEach((button) => {
+    const side = button.dataset.punch;
+    button.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      button.classList.add("pressed");
+      button.setPointerCapture?.(event.pointerId);
+      beginCharge(side);
+    });
+    const release = (event) => {
+      event.preventDefault();
+      button.classList.remove("pressed");
+      releasePunch(side);
+    };
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointercancel", release);
+    button.addEventListener("pointerleave", (event) => {
+      if (event.buttons === 0) release(event);
+    });
+  });
+
+  document.querySelector(".mobile-controls")?.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+  });
+}
+
 elements.startButton.addEventListener("click", startGame);
 elements.restartButton.addEventListener("click", startGame);
 elements.soundToggle.addEventListener("click", () => {
@@ -621,4 +660,5 @@ window.addEventListener("blur", () => {
   if (state.charge.right) releasePunch("right");
 });
 
+bindTouchControls();
 resetGame();
