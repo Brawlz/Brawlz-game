@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./style.css?v=player-only-dodge-1" />
+    <link rel="stylesheet" href="./style.css?v=tap-jab-hold-uppercut-1" />
   </head>
   <body>
     <main id="game" class="game" aria-label="Brawlz first-person fighting game">
@@ -91,11 +91,11 @@
         </div>
 
         <div class="charge-wrap left-charge" id="left-charge-wrap">
-          <span>LEFT POWER</span>
+          <span>LEFT UPPERCUT</span>
           <div class="charge-bar"><i id="left-charge"></i></div>
         </div>
         <div class="charge-wrap right-charge" id="right-charge-wrap">
-          <span>RIGHT POWER</span>
+          <span>RIGHT UPPERCUT</span>
           <div class="charge-bar"><i id="right-charge"></i></div>
         </div>
 
@@ -110,7 +110,7 @@
           <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="false">
             SOUND ON
           </button>
-          <small>Hold J or K to charge · release to strike</small>
+          <small>Tap J/K for jab or cross · hold for an uppercut</small>
         </footer>
 
         <nav class="mobile-controls" aria-label="Touch fight controls" style="display: grid">
@@ -130,12 +130,12 @@
           </div>
           <div class="mobile-punches">
             <button type="button" data-punch="left">
-              <span>HOLD · LEFT</span>
-              <strong>JAB</strong>
+              <span>TAP · JAB</span>
+              <strong>HOLD ↑ UPPERCUT</strong>
             </button>
             <button type="button" data-punch="right">
-              <span>HOLD · RIGHT</span>
-              <strong>CROSS</strong>
+              <span>TAP · CROSS</span>
+              <strong>HOLD ↑ UPPERCUT</strong>
             </button>
           </div>
         </nav>
@@ -176,6 +176,6 @@
         </div>
       </section>
     </main>
-    <script src="./game.js?v=player-only-dodge-1"></script>
+    <script src="./game.js?v=tap-jab-hold-uppercut-1"></script>
   </body>
 </html>

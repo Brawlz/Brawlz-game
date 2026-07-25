@@ -54,7 +54,12 @@ const PLAYER_SPRITES = {
   guard: "./public/assets/player-back-step.png",
   left: "./public/assets/player-punch-left.png",
   right: "./public/assets/player-punch-right.png",
+  leftUppercut: "./public/assets/player-uppercut-left.png",
+  rightUppercut: "./public/assets/player-uppercut-right.png",
 };
+
+const UPPERCUT_HOLD_MS = 420;
+const UPPERCUT_FULL_CHARGE_MS = 1250;
 
 [...Object.values(ENEMY_SPRITES), ...Object.values(PLAYER_SPRITES)].forEach((src) => {
   const image = new Image();
@@ -545,11 +550,16 @@ function beginCharge(side) {
 function updateCharge(side) {
   if (!state.charge[side] || !state.running) return;
   const elapsed = performance.now() - state.charge[side];
-  const charge = clamp(elapsed / 1200, 0, 1);
+  const charge = clamp(
+    (elapsed - UPPERCUT_HOLD_MS) / (UPPERCUT_FULL_CHARGE_MS - UPPERCUT_HOLD_MS),
+    0,
+    1,
+  );
   const bar = side === "left" ? elements.leftCharge : elements.rightCharge;
   bar.style.width = `${charge * 100}%`;
+  elements.playerBody.classList.toggle("uppercut-ready", elapsed >= UPPERCUT_HOLD_MS);
 
-  state.playerStamina = clamp(state.playerStamina - 0.33, 0, 100);
+  state.playerStamina = clamp(state.playerStamina - (elapsed >= UPPERCUT_HOLD_MS ? 0.25 : 0.08), 0, 100);
   updateHud();
 
   if (state.playerStamina <= 0) {
@@ -564,19 +574,31 @@ function releasePunch(side) {
   if (!state.running || !state.charge[side]) return;
   const held = performance.now() - state.charge[side];
   state.charge[side] = null;
-  const charge = clamp(held / 1200, 0.12, 1);
+  const isUppercut = held >= UPPERCUT_HOLD_MS;
+  const charge = isUppercut
+    ? clamp(
+        (held - UPPERCUT_HOLD_MS) / (UPPERCUT_FULL_CHARGE_MS - UPPERCUT_HOLD_MS),
+        0.35,
+        1,
+      )
+    : clamp(held / UPPERCUT_HOLD_MS, 0.18, 1);
   const bar = side === "left" ? elements.leftCharge : elements.rightCharge;
   const wrap = side === "left" ? elements.leftChargeWrap : elements.rightChargeWrap;
 
-  elements.playerBody.classList.remove(`charging-${side}`);
-  const punchClass = side === "left" ? "player-punch-left" : "player-punch-right";
-  setPlayerPose(side);
+  elements.playerBody.classList.remove(`charging-${side}`, "uppercut-ready");
+  const punchClass = isUppercut
+    ? `player-uppercut-${side}`
+    : `player-punch-${side}`;
+  const pose = isUppercut
+    ? `${side}Uppercut`
+    : side;
+  setPlayerPose(pose);
   resetAnimation(elements.playerBody, punchClass);
   wrap.classList.remove("active");
   bar.style.width = "0";
   state.punches += 1;
 
-  const staminaCost = 5 + charge * 10;
+  const staminaCost = isUppercut ? 11 + charge * 9 : 4 + charge * 3;
   state.playerStamina = clamp(state.playerStamina - staminaCost, 0, 100);
 
   const inRange = !elements.enemy.classList.contains("knockout");
@@ -594,13 +616,16 @@ function releasePunch(side) {
 
   if (inRange && (!blocked || weakHit)) {
     state.hits += 1;
-    let damage = 4 + charge * 9;
+    let damage = isUppercut ? 10 + charge * 10 : 4 + charge * 4;
     if (weakHit) {
       damage *= 2.35;
       state.weakHits += 1;
       elements.enemy.classList.remove("idle");
       resetAnimation(elements.enemy, "weak-stagger");
-      setTimeout(() => setMessage(`RIB SHOT · ${Math.round(damage)} DAMAGE`), 360);
+      setTimeout(
+        () => setMessage(`${isUppercut ? "LEFT UPPERCUT" : "RIB SHOT"} · ${Math.round(damage)} DAMAGE`),
+        360,
+      );
       elements.objective.textContent = "You found it. Make him dip, then punish the right ribs.";
       sound.custom(side === "left" ? AUDIO.punchLeft : AUDIO.punchRight, 0.9);
       setTimeout(() => {
@@ -609,11 +634,16 @@ function releasePunch(side) {
       }, 115);
     } else {
       resetAnimation(elements.enemy, "stagger");
-      setTimeout(() => setMessage(charge > 0.82 ? "HEAVY SHOT" : "CLEAN HIT"), 360);
+      const strikeName = isUppercut
+        ? `${side.toUpperCase()} UPPERCUT`
+        : side === "left"
+          ? "LEFT JAB"
+          : "RIGHT CROSS";
+      setTimeout(() => setMessage(`${strikeName} CONNECTS`), 360);
       sound.custom(side === "left" ? AUDIO.punchLeft : AUDIO.punchRight, 0.82);
       setTimeout(() => {
-        showImpact(charge, false);
-        sound.hurt(false, charge > 0.82);
+        showImpact(isUppercut ? Math.max(0.78, charge) : charge, false);
+        sound.hurt(false, isUppercut || charge > 0.82);
       }, 115);
     }
     state.enemyHealth = clamp(state.enemyHealth - damage, 0, 100);
@@ -637,7 +667,7 @@ function releasePunch(side) {
     state.enemyBlocking = false;
     setEnemyPose("guard");
     if (state.running && !state.enemyBusy) elements.enemy.classList.add("idle");
-  }, 640);
+  }, isUppercut ? 720 : 560);
 
   if (state.enemyHealth <= 0) finishFight(true, "KNOCKOUT");
 }

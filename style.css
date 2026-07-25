@@ -488,12 +488,26 @@ kbd {
   animation: none;
 }
 
+.player-body.player-uppercut-left,
+.player-body.player-uppercut-right {
+  animation: playerUppercutDrive 0.58s cubic-bezier(0.16, 0.82, 0.22, 1);
+}
+
+.player-body.player-uppercut-left img,
+.player-body.player-uppercut-right img {
+  animation: none;
+}
+
 .player-body.charging-left {
   transform: translateX(-52%) translateY(2%) rotate(-2deg);
 }
 
 .player-body.charging-right {
   transform: translateX(-48%) translateY(2%) rotate(2deg);
+}
+
+.player-body.uppercut-ready {
+  transform: translateX(-50%) translateY(5%) scaleY(0.96);
 }
 
 .player-body.body-dodge-left {
@@ -841,6 +855,13 @@ kbd {
 @keyframes playerPunchDrive {
   0% { transform: translateX(-50%) translateY(0) scale(1); }
   42%, 62% { transform: translateX(-50%) translateY(-9%) scale(1.12); }
+  100% { transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+@keyframes playerUppercutDrive {
+  0% { transform: translateX(-50%) translateY(5%) scaleY(0.96); }
+  20% { transform: translateX(-50%) translateY(7%) scale(0.98, 0.92); }
+  48%, 68% { transform: translateX(-50%) translateY(-15%) scale(1.16); }
   100% { transform: translateX(-50%) translateY(0) scale(1); }
 }
 
