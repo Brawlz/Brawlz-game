@@ -79,7 +79,7 @@
           </div>
         </div>
 
-        <div class="player-body" id="player-body" aria-hidden="true">
+        <div class="player-body" id="player-body" aria-hidden="true" hidden>
           <div class="player-shoulder player-shoulder-left"></div>
           <div class="player-torso">
             <span class="shirt-seam"></span>
@@ -107,7 +107,7 @@
 
         <div class="message" id="message" aria-live="polite"></div>
 
-        <footer class="controls">
+        <footer class="controls" hidden>
           <div><kbd>←</kbd><kbd>→</kbd><span>DODGE</span></div>
           <div><kbd>↓</kbd><span>DUCK</span></div>
           <div><kbd>↑</kbd><span>HIGH GUARD</span></div>
@@ -119,7 +119,7 @@
           <small>Hold J or K to charge · release to strike</small>
         </footer>
 
-        <nav class="mobile-controls" aria-label="Touch fight controls">
+        <nav class="mobile-controls" aria-label="Touch fight controls" style="display: grid">
           <div class="mobile-movement">
             <button type="button" data-defense="left" aria-label="Dodge left">
               <b>←</b><small>LEFT</small>
