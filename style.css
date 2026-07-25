@@ -930,7 +930,7 @@ kbd {
   }
 }
 
-@media (max-width: 900px), (hover: none) and (pointer: coarse) {
+@media (max-width: 900px), (hover: none) and (pointer: coarse), (orientation: portrait) {
   .game,
   .arena {
     min-width: 0;
@@ -1022,10 +1022,7 @@ kbd {
   }
 
   .player-body {
-    right: -5%;
-    bottom: -14%;
-    left: -5%;
-    height: 40%;
+    display: none;
   }
 
   .fist {
@@ -1060,7 +1057,7 @@ kbd {
 
   .mobile-controls {
     position: absolute;
-    z-index: 35;
+    z-index: 100;
     right: 0;
     bottom: 0;
     left: 0;
