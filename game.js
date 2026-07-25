@@ -14,6 +14,7 @@ const elements = {
   startButton: $("#start-button"),
   restartButton: $("#restart-button"),
   enemy: $("#enemy"),
+  enemySprite: $("#enemy-sprite"),
   weakSpot: $("#weak-spot"),
   tell: $("#tell"),
   tellLabel: $("#tell-label"),
@@ -41,6 +42,22 @@ const elements = {
   resultWeak: $("#result-weak"),
   soundToggle: $("#sound-toggle"),
 };
+
+const ENEMY_SPRITES = {
+  guard: "./public/assets/opponent.png",
+  jab: "./public/assets/opponent-jab.png",
+  cross: "./public/assets/opponent-cross.png",
+  block: "./public/assets/opponent-block.png",
+};
+
+Object.values(ENEMY_SPRITES).forEach((src) => {
+  const image = new Image();
+  image.src = src;
+});
+
+function setEnemyPose(pose) {
+  elements.enemySprite.src = ENEMY_SPRITES[pose] || ENEMY_SPRITES.guard;
+}
 
 const AUDIO = {
   music: "./public/audio/bar-blues.mp3",
@@ -235,6 +252,7 @@ const state = {
   defense: null,
   defenseUntil: 0,
   enemyBusy: false,
+  enemyBlocking: false,
   enemyVulnerable: false,
   vulnerableUntil: 0,
   charge: { left: null, right: null },
@@ -247,6 +265,7 @@ const state = {
   attackTimer: null,
   clockTimer: null,
   staminaTimer: null,
+  blockTimer: null,
   messageTimer: null,
 };
 
@@ -296,6 +315,7 @@ function updateHud() {
 
 function clearCombatTimers() {
   clearTimeout(state.attackTimer);
+  clearTimeout(state.blockTimer);
   clearInterval(state.clockTimer);
   clearInterval(state.staminaTimer);
 }
@@ -310,6 +330,7 @@ function resetGame() {
     defense: null,
     defenseUntil: 0,
     enemyBusy: false,
+    enemyBlocking: false,
     enemyVulnerable: false,
     vulnerableUntil: 0,
     charge: { left: null, right: null },
@@ -322,6 +343,7 @@ function resetGame() {
   });
 
   elements.enemy.className = "enemy idle";
+  setEnemyPose("guard");
   elements.weakSpot.className = "weak-spot";
   elements.tell.classList.remove("visible");
   elements.leftFist.classList.remove("punch", "charging");
@@ -374,6 +396,7 @@ function scheduleEnemyAttack(delay) {
 async function enemyAttack() {
   if (!state.running || state.enemyBusy) return;
   state.enemyBusy = true;
+  state.enemyBlocking = false;
   state.enemyAttacks += 1;
 
   const attackPool =
@@ -383,6 +406,8 @@ async function enemyAttack() {
   const windup = attack.windup * speedFactor;
 
   elements.enemy.classList.remove("idle");
+  elements.enemy.classList.remove("blocking");
+  setEnemyPose("guard");
   elements.enemy.classList.add(attack.windupClass);
   elements.tellLabel.textContent = attack.label;
   elements.tell.classList.add("visible");
@@ -399,6 +424,7 @@ async function enemyAttack() {
 
   elements.tell.classList.remove("visible");
   elements.enemy.classList.remove(attack.windupClass);
+  setEnemyPose(attack.id === "left" ? "jab" : "cross");
   resetAnimation(elements.enemy, attack.attackClass);
 
   const defended =
@@ -422,6 +448,7 @@ async function enemyAttack() {
   updateHud();
   await sleep(330);
   elements.enemy.classList.remove(attack.attackClass);
+  setEnemyPose("guard");
 
   if (state.playerHealth <= 0) {
     finishFight(false, "KNOCKOUT");
@@ -475,6 +502,21 @@ function beginCharge(side) {
   const wrap = side === "left" ? elements.leftChargeWrap : elements.rightChargeWrap;
   fist.classList.add("charging");
   wrap.classList.add("active");
+  clearTimeout(state.blockTimer);
+  state.blockTimer = setTimeout(() => {
+    if (
+      state.running &&
+      state.charge[side] &&
+      !state.enemyBusy &&
+      !state.enemyVulnerable &&
+      Math.random() < 0.72
+    ) {
+      state.enemyBlocking = true;
+      elements.enemy.classList.remove("idle");
+      elements.enemy.classList.add("blocking");
+      setEnemyPose("block");
+    }
+  }, 360);
   updateCharge(side);
 }
 
@@ -517,7 +559,13 @@ function releasePunch(side) {
   state.playerStamina = clamp(state.playerStamina - staminaCost, 0, 100);
 
   const inRange = !elements.enemy.classList.contains("knockout");
-  const blocked = state.enemyBusy && !state.enemyVulnerable && Math.random() < 0.62;
+  const blocked =
+    !state.enemyVulnerable &&
+    (
+      state.enemyBlocking ||
+      (state.enemyBusy && Math.random() < 0.48) ||
+      (!state.enemyBusy && Math.random() < 0.32)
+    );
   const weakHit =
     side === "left" &&
     state.enemyVulnerable &&
@@ -544,7 +592,14 @@ function releasePunch(side) {
     state.enemyHealth = clamp(state.enemyHealth - damage, 0, 100);
     resetAnimation(elements.hitFlash, "active");
   } else {
-    setMessage(blocked ? "HE READ IT" : "MISSED");
+    setMessage(blocked ? "BLOCKED BY HIS ARMS" : "MISSED");
+    if (blocked) {
+      state.enemyBlocking = true;
+      elements.enemy.classList.remove("idle");
+      elements.enemy.classList.add("blocking");
+      setEnemyPose("block");
+      sound.impact(0.42);
+    }
     sound.whoosh();
   }
 
@@ -552,7 +607,9 @@ function releasePunch(side) {
   setTimeout(() => {
     fist.classList.remove("punch");
     elements.playerBody.classList.remove(leanClass);
-    elements.enemy.classList.remove("stagger", "weak-stagger");
+    elements.enemy.classList.remove("stagger", "weak-stagger", "blocking");
+    state.enemyBlocking = false;
+    setEnemyPose("guard");
     if (state.running && !state.enemyBusy) elements.enemy.classList.add("idle");
   }, 640);
 

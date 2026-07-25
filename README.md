@@ -39,6 +39,7 @@ Then open `http://localhost:8080`.
 - Visible shoulders and torso that drive forward with punches and move with defense
 - Health, stamina, punch-power, timer, injury, and result HUD
 - Telegraph-driven opponent AI that becomes faster as it takes damage
+- Full opponent pose animation: boxer footwork, extended jab/cross attacks, and visible arm blocks
 - Directional dodge, duck, and high-guard defense
 - Discoverable rib weak spot revealed by a specific opponent wind-up
 - Progressive opponent injury states and knockout animation
