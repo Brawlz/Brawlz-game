@@ -499,7 +499,8 @@ function defend(type) {
   state.defense = type;
   state.defenseUntil = performance.now() + (type === "guard" ? 480 : 420);
   const className = type === "left" ? "dodge-left" : type === "right" ? "dodge-right" : type;
-  resetAnimation(elements.arena, className);
+  const movesArena = type !== "left" && type !== "right";
+  if (movesArena) resetAnimation(elements.arena, className);
   const bodyClass =
     type === "left"
       ? "body-dodge-left"
@@ -511,8 +512,9 @@ function defend(type) {
   if (bodyClass) resetAnimation(elements.playerBody, bodyClass);
   sound.custom(AUDIO.dodge, 0.42);
   sound.whoosh();
-  setTimeout(() => elements.arena.classList.remove(className), 580);
-  if (bodyClass) setTimeout(() => elements.playerBody.classList.remove(bodyClass), 580);
+  if (movesArena) setTimeout(() => elements.arena.classList.remove(className), 580);
+  const bodyDuration = type === "left" || type === "right" ? 720 : 580;
+  if (bodyClass) setTimeout(() => elements.playerBody.classList.remove(bodyClass), bodyDuration);
   updateHud();
 }
 

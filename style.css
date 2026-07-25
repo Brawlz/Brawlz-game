@@ -50,14 +50,6 @@ kbd {
   transform-origin: center;
 }
 
-.arena.dodge-left {
-  animation: dodgeLeft 0.42s ease-out;
-}
-
-.arena.dodge-right {
-  animation: dodgeRight 0.42s ease-out;
-}
-
 .arena.duck {
   animation: duck 0.55s ease-out;
 }
@@ -505,11 +497,11 @@ kbd {
 }
 
 .player-body.body-dodge-left {
-  animation: bodyDodgeLeft 0.42s ease-out;
+  animation: bodyDodgeLeft 0.68s ease-out;
 }
 
 .player-body.body-dodge-right {
-  animation: bodyDodgeRight 0.42s ease-out;
+  animation: bodyDodgeRight 0.68s ease-out;
 }
 
 .player-body.body-duck {
@@ -804,14 +796,6 @@ kbd {
   100% { transform: translateX(-50%) scale(1.02); }
 }
 
-@keyframes dodgeLeft {
-  50% { transform: perspective(700px) rotateY(-7deg) translateX(-7%); }
-}
-
-@keyframes dodgeRight {
-  50% { transform: perspective(700px) rotateY(7deg) translateX(7%); }
-}
-
 @keyframes duck {
   50% { transform: translateY(18%) scale(1.06); }
 }
@@ -861,11 +845,13 @@ kbd {
 }
 
 @keyframes bodyDodgeLeft {
-  50% { transform: translateX(-64%) rotateZ(-4deg); }
+  0%, 100% { transform: translateX(-50%) rotateZ(0); }
+  25%, 72% { transform: translateX(-76%) rotateZ(-6deg); }
 }
 
 @keyframes bodyDodgeRight {
-  50% { transform: translateX(-36%) rotateZ(4deg); }
+  0%, 100% { transform: translateX(-50%) rotateZ(0); }
+  25%, 72% { transform: translateX(-24%) rotateZ(6deg); }
 }
 
 @keyframes bodyDuck {
