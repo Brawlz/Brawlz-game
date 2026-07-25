@@ -930,7 +930,7 @@ kbd {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
   .game,
   .arena {
     min-width: 0;

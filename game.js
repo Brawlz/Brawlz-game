@@ -1,5 +1,12 @@
 const $ = (selector) => document.querySelector(selector);
 
+if (
+  window.matchMedia("(hover: none) and (pointer: coarse)").matches ||
+  navigator.maxTouchPoints > 0
+) {
+  document.documentElement.classList.add("touch-device");
+}
+
 const elements = {
   arena: $("#arena"),
   startScreen: $("#start-screen"),
