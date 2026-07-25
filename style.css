@@ -419,58 +419,32 @@ kbd {
 .player-body {
   position: absolute;
   z-index: 11;
-  right: 16%;
-  bottom: -22%;
-  left: 16%;
-  height: 47%;
-  pointer-events: none;
-  filter: drop-shadow(0 -8px 24px rgba(0, 0, 0, 0.55));
-  transform-origin: bottom center;
-}
-
-.player-torso {
-  position: absolute;
-  right: 18%;
-  bottom: 0;
-  left: 18%;
-  height: 100%;
-  border-radius: 48% 48% 7% 7%;
-  background:
-    radial-gradient(ellipse at 50% 5%, rgba(255, 255, 255, 0.1), transparent 36%),
-    repeating-linear-gradient(88deg, transparent 0 48px, rgba(255, 255, 255, 0.018) 49px 51px),
-    linear-gradient(110deg, #171a1d, #33383c 47%, #16191c);
-  box-shadow:
-    inset 45px 0 60px rgba(0, 0, 0, 0.42),
-    inset -45px 0 60px rgba(0, 0, 0, 0.48);
-}
-
-.shirt-seam {
-  position: absolute;
-  top: 0;
-  bottom: 0;
+  bottom: 100px;
   left: 50%;
-  width: 2px;
-  background: rgba(0, 0, 0, 0.36);
-  box-shadow: 3px 0 rgba(255, 255, 255, 0.035);
+  width: clamp(310px, 37vw, 560px);
+  height: min(72vh, 790px);
+  pointer-events: none;
+  filter:
+    drop-shadow(0 18px 20px rgba(0, 0, 0, 0.52))
+    drop-shadow(0 0 14px rgba(133, 45, 21, 0.18));
+  opacity: 0;
+  transform: translateX(-50%) translateY(64%) scale(0.74);
+  transform-origin: 50% 100%;
 }
 
-.player-shoulder {
-  position: absolute;
-  bottom: 28%;
-  width: 30%;
-  height: 54%;
-  border-radius: 50%;
-  background: linear-gradient(125deg, #34393d, #15181b 68%);
+.player-body img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  user-select: none;
 }
 
-.player-shoulder-left {
-  left: 5%;
-  transform: rotate(18deg);
-}
-
-.player-shoulder-right {
-  right: 5%;
-  transform: rotate(-18deg);
+.player-body.entered {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+  animation: playerStepIn 0.82s cubic-bezier(0.18, 0.76, 0.2, 1) forwards;
 }
 
 .player-body.lean-left {
@@ -493,11 +467,17 @@ kbd {
   animation: bodyDuck 0.55s ease-out;
 }
 
+.player-body.body-guard {
+  animation: bodyGuard 0.48s ease-out;
+}
+
 .fist {
   position: absolute;
-  bottom: -17vh;
-  width: clamp(390px, 39vw, 650px);
+  bottom: 2vh;
+  width: clamp(250px, 28vw, 430px);
+  opacity: 0;
   transform-origin: bottom center;
+  transition: opacity 0.08s ease;
 }
 
 .fist img {
@@ -518,18 +498,22 @@ kbd {
 }
 
 .left-fist.punch {
+  opacity: 1;
   animation: leftPunch 0.3s ease-out;
 }
 
 .right-fist.punch {
+  opacity: 1;
   animation: rightPunch 0.3s ease-out;
 }
 
 .left-fist.charging {
+  opacity: 0.72;
   animation: leftCharge 0.5s ease-in-out infinite alternate;
 }
 
 .right-fist.charging {
+  opacity: 0.72;
   animation: rightCharge 0.5s ease-in-out infinite alternate;
 }
 
@@ -884,23 +868,45 @@ kbd {
 }
 
 @keyframes bodyLeanLeft {
-  45% { transform: perspective(800px) translateY(-7%) translateX(7%) rotateZ(3deg) scale(1.08); }
+  45% { transform: perspective(800px) translateX(-43%) translateY(-7%) rotateZ(3deg) scale(1.08); }
 }
 
 @keyframes bodyLeanRight {
-  45% { transform: perspective(800px) translateY(-7%) translateX(-7%) rotateZ(-3deg) scale(1.08); }
+  45% { transform: perspective(800px) translateX(-57%) translateY(-7%) rotateZ(-3deg) scale(1.08); }
 }
 
 @keyframes bodyDodgeLeft {
-  50% { transform: translateX(-12%) rotateZ(-4deg); }
+  50% { transform: translateX(-64%) rotateZ(-4deg); }
 }
 
 @keyframes bodyDodgeRight {
-  50% { transform: translateX(12%) rotateZ(4deg); }
+  50% { transform: translateX(-36%) rotateZ(4deg); }
 }
 
 @keyframes bodyDuck {
-  50% { transform: translateY(24%) scaleX(1.08); }
+  50% { transform: translateX(-50%) translateY(24%) scaleX(1.08); }
+}
+
+@keyframes bodyGuard {
+  50% { transform: translateX(-50%) translateY(4%) scale(1.06); filter: brightness(0.76); }
+}
+
+@keyframes playerStepIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(64%) scale(0.74);
+  }
+  58% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-2.5%) scale(1.025);
+  }
+  76% {
+    transform: translateX(-50%) translateY(1.5%) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
 }
 
 @keyframes damage {
@@ -1039,7 +1045,9 @@ kbd {
   }
 
   .player-body {
-    display: none;
+    bottom: 128px;
+    width: min(56vw, 390px);
+    height: min(58vh, 600px);
   }
 
   .fist {
@@ -1305,8 +1313,7 @@ kbd {
 
 /* Fight controls are intentionally visible on every device. This avoids mobile
    browsers that request a desktop-sized viewport and misreport pointer type. */
-.controls,
-.player-body {
+.controls {
   display: none !important;
 }
 

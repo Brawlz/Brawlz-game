@@ -361,6 +361,7 @@ function startGame() {
   sound.startMusic();
   resetGame();
   state.running = true;
+  requestAnimationFrame(() => elements.playerBody.classList.add("entered"));
   elements.startScreen.classList.add("hidden");
   elements.endScreen.classList.add("hidden");
   setMessage("ROUND ONE");
@@ -486,7 +487,7 @@ function defend(type) {
         ? "body-dodge-right"
         : type === "duck"
           ? "body-duck"
-          : null;
+          : "body-guard";
   if (bodyClass) resetAnimation(elements.playerBody, bodyClass);
   sound.custom(AUDIO.dodge, 0.42);
   sound.whoosh();
