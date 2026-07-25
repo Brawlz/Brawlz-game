@@ -613,6 +613,7 @@ function bindTouchControls() {
       event.preventDefault();
       button.classList.add("pressed");
       button.setPointerCapture?.(event.pointerId);
+      navigator.vibrate?.(18);
       defend(button.dataset.defense);
     });
     const release = () => button.classList.remove("pressed");
@@ -627,6 +628,7 @@ function bindTouchControls() {
       event.preventDefault();
       button.classList.add("pressed");
       button.setPointerCapture?.(event.pointerId);
+      navigator.vibrate?.(22);
       beginCharge(side);
     });
     const release = (event) => {

@@ -1105,16 +1105,36 @@ kbd {
   }
 
   .mobile-controls button {
-    border: 1px solid rgba(255, 255, 255, 0.28);
-    border-bottom-width: 3px;
+    border: 2px solid rgba(255, 255, 255, 0.66);
+    border-bottom-width: 4px;
     border-radius: 9px;
     color: white;
-    background: rgba(255, 255, 255, 0.11);
-    box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
+    background: rgba(22, 24, 27, 0.92);
+    box-shadow:
+      inset 0 1px rgba(255, 255, 255, 0.16),
+      0 4px 14px rgba(0, 0, 0, 0.55);
     font-family: "Barlow Condensed", sans-serif;
     font-size: 23px;
     font-weight: 900;
     touch-action: none;
+  }
+
+  .mobile-movement b,
+  .mobile-movement small {
+    display: block;
+    line-height: 1;
+  }
+
+  .mobile-movement b {
+    font-size: 22px;
+  }
+
+  .mobile-movement small {
+    margin-top: 3px;
+    color: var(--amber);
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
   }
 
   .mobile-controls button:active,
@@ -1132,8 +1152,11 @@ kbd {
 
   .mobile-punches button {
     height: 96px;
-    border-color: rgba(212, 43, 30, 0.7);
-    background: linear-gradient(145deg, rgba(212, 43, 30, 0.5), rgba(75, 12, 8, 0.72));
+    border-color: rgba(255, 108, 91, 0.95);
+    background: linear-gradient(145deg, rgba(218, 45, 31, 0.96), rgba(104, 18, 12, 0.96));
+    box-shadow:
+      inset 0 1px rgba(255, 255, 255, 0.2),
+      0 0 18px rgba(212, 43, 30, 0.28);
   }
 
   .mobile-punches span,
@@ -1149,7 +1172,7 @@ kbd {
 
   .mobile-punches strong {
     margin-top: 2px;
-    font-size: 18px;
+    font-size: 20px;
     letter-spacing: 0.05em;
   }
 
