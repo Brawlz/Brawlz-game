@@ -1394,3 +1394,19 @@ kbd {
   font-size: 20px;
   letter-spacing: 0.05em;
 }
+
+.music-credit {
+  display: block;
+  margin-top: 13px;
+  color: rgba(244, 231, 209, 0.62);
+  font-size: 10px;
+  line-height: 1.35;
+  text-align: center;
+  text-decoration: none;
+}
+
+.music-credit:hover,
+.music-credit:focus-visible {
+  color: var(--amber);
+  text-decoration: underline;
+}

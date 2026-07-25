@@ -25,3 +25,11 @@ The game attempts to play these files automatically. If a file is absent, it use
 a synthesized fallback sound so the game remains playable.
 
 Only add audio that you created, licensed, or have permission to distribute.
+
+## Included background music
+
+`bar-blues.mp3` is “Whiskey Bar Blues” from Fesliyan Studios, downloaded from
+the provider's official site for use as background music in this noncommercial
+video game.
+
+Credit: https://www.FesliyanStudios.com
