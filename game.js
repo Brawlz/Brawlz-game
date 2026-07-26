@@ -504,7 +504,7 @@ function defend(type) {
   state.defense = type;
   state.defenseUntil = performance.now() + (type === "guard" ? 480 : 420);
   const className = type === "left" ? "dodge-left" : type === "right" ? "dodge-right" : type;
-  const movesArena = type !== "left" && type !== "right";
+  const movesArena = type === "guard";
   if (movesArena) resetAnimation(elements.arena, className);
   const bodyClass =
     type === "left"
