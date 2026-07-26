@@ -70,6 +70,8 @@ const UPPERCUT_FULL_CHARGE_MS = 1250;
 const CHARGE_READY_STAMINA = 2;
 const CHARGE_STAMINA_PER_SECOND = 10;
 const DIRECTION_CHORD_MS = 140;
+const STAMINA_REGEN_PER_SECOND = 5;
+const WEAK_SPOT_AFTER_IMPACT_MS = 330;
 
 const DIRECTIONAL_MOVES = {
   up: {
@@ -87,7 +89,7 @@ const DIRECTIONAL_MOVES = {
     specialDamage: 18,
     tapStamina: 7,
     specialStamina: 18,
-    weakMultiplier: 2.6,
+    weakMultiplier: 1.6,
   },
   left: {
     tap: "SLIP HOOK",
@@ -336,6 +338,8 @@ const state = {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const isWeakSpotOpen = () =>
+  state.enemyVulnerable && performance.now() <= state.vulnerableUntil;
 
 function setPercent(element, value) {
   element.style.width = `${clamp(value, 0, 100)}%`;
@@ -461,10 +465,14 @@ function startGame() {
     if (!state.running) return;
     const charging = state.charge.left || state.charge.right;
     if (!charging && state.playerStamina < 100) {
-      state.playerStamina = clamp(state.playerStamina + 1.5, 0, 100);
+      state.playerStamina = clamp(
+        state.playerStamina + STAMINA_REGEN_PER_SECOND / 10,
+        0,
+        100,
+      );
       updateHud();
     }
-  }, 120);
+  }, 100);
 
   scheduleEnemyAttack(1300);
 }
@@ -484,8 +492,9 @@ async function enemyAttack() {
   state.enemyAttacks += 1;
 
   const teachingReveal = state.enemyAttacks === 3;
-  const repeatReveal = state.enemyAttacks > 3 && state.enemyAttacks % 4 === 0;
-  const attackPool = state.enemyHealth > 72 ? ATTACKS.slice(0, 2) : ATTACKS;
+  const repeatReveal =
+    state.enemyAttacks > 3 && (state.enemyAttacks - 3) % 4 === 0;
+  const attackPool = ATTACKS.filter((candidate) => !candidate.exposesWeakSpot);
   const attack =
     teachingReveal || repeatReveal
       ? ATTACKS.find((candidate) => candidate.exposesWeakSpot)
@@ -503,13 +512,14 @@ async function enemyAttack() {
   if (attack.exposesWeakSpot) {
     state.weakSpotReveals += 1;
     state.enemyVulnerable = true;
-    state.vulnerableUntil = performance.now() + windup + 680;
+    state.vulnerableUntil =
+      performance.now() + windup + WEAK_SPOT_AFTER_IMPACT_MS;
     elements.weakSpot.classList.add("revealed");
     setEnemyPose("vulnerable");
     elements.objective.textContent =
       state.weakSpotReveals === 1
-        ? "WEAK SPOT FOUND — his right ribs open when he dips. Tap LEFT JAB now."
-        : "He dipped again — punish the glowing right ribs with your LEFT.";
+        ? "WEAK SPOT FOUND — hold DOWN and tap J for a left BODY HOOK."
+        : "He dipped again — DOWN + J punishes the glowing right ribs.";
   }
 
   await sleep(windup);
@@ -541,7 +551,6 @@ async function enemyAttack() {
   updateHud();
   await sleep(330);
   elements.enemy.classList.remove(attack.attackClass);
-  setEnemyPose(attack.exposesWeakSpot ? "vulnerable" : "guard");
 
   if (state.playerHealth <= 0) {
     finishFight(false, "KNOCKOUT");
@@ -549,11 +558,10 @@ async function enemyAttack() {
   }
 
   if (attack.exposesWeakSpot) {
-    await sleep(470);
     state.enemyVulnerable = false;
     elements.weakSpot.classList.remove("revealed");
-    setEnemyPose("guard");
   }
+  setEnemyPose("guard");
 
   elements.enemy.classList.add("idle");
   state.enemyBusy = false;
@@ -746,7 +754,8 @@ function releasePunch(side) {
   state.playerStamina = clamp(state.playerStamina - staminaCost, 0, 100);
 
   const inRange = !elements.enemy.classList.contains("knockout");
-  const timedCounter = state.enemyBusy || state.enemyVulnerable;
+  const weakSpotOpen = isWeakSpotOpen();
+  const timedCounter = state.enemyBusy || weakSpotOpen;
   const blockChance = directionalMove
     ? timedCounter
       ? isSpecial
@@ -759,15 +768,15 @@ function releasePunch(side) {
       ? 0.3
       : 0.12;
   const blocked =
-    !state.enemyVulnerable &&
+    !weakSpotOpen &&
     (
       state.enemyBlocking ||
       Math.random() < blockChance
     );
   const weakHit =
     side === "left" &&
-    state.enemyVulnerable &&
-    performance.now() <= state.vulnerableUntil;
+    direction === "down" &&
+    weakSpotOpen;
 
   if (inRange && (!blocked || weakHit)) {
     state.hits += 1;
@@ -790,7 +799,8 @@ function releasePunch(side) {
         ),
         360,
       );
-      elements.objective.textContent = "You found it. Make him dip, then punish the right ribs.";
+      elements.objective.textContent =
+        "You found it. Wait for his next dip, then use DOWN + J again.";
       sound.custom(side === "left" ? AUDIO.punchLeft : AUDIO.punchRight, 0.9);
       setTimeout(() => {
         showImpact(1, true);
@@ -843,7 +853,7 @@ function releasePunch(side) {
     setPlayerPose("guard");
     elements.enemy.classList.remove("stagger", "weak-stagger", "blocking");
     state.enemyBlocking = false;
-    setEnemyPose(state.enemyVulnerable ? "vulnerable" : "guard");
+    setEnemyPose(isWeakSpotOpen() ? "vulnerable" : "guard");
     if (state.running && !state.enemyBusy) elements.enemy.classList.add("idle");
   }, isSpecial ? 820 : isUppercut ? 720 : directionalMove ? 620 : 560);
 
