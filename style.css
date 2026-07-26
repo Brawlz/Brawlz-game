@@ -354,6 +354,7 @@ kbd {
 
 .enemy.knockout {
   animation: knockout 1.55s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+  z-index: 12;
 }
 
 .enemy.injured-1 {
@@ -679,6 +680,29 @@ kbd {
   pointer-events: none;
 }
 
+.end-screen.victory {
+  place-items: center start;
+  padding-left: 3vw;
+  backdrop-filter: none;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(5, 3, 2, 0.93) 0 34%,
+      rgba(5, 3, 2, 0.26) 52%,
+      rgba(5, 3, 2, 0.08) 100%
+    );
+}
+
+.end-screen.victory .end-card {
+  box-sizing: border-box;
+  width: min(460px, 42vw);
+  margin-right: 0;
+  padding: 24px;
+  border-left: 3px solid var(--amber);
+  background: rgba(5, 3, 2, 0.72);
+  backdrop-filter: blur(4px);
+}
+
 .start-card,
 .end-card {
   width: min(540px, 80vw);
@@ -849,7 +873,8 @@ kbd {
 
 @keyframes knockout {
   20% { transform: translateX(-50%) rotate(8deg) scale(1.02); }
-  100% { transform: translateX(-50%) translateY(75%) rotate(-82deg) scale(0.9); opacity: 0.55; }
+  72% { transform: translateX(calc(-50% + 28vw)) translateY(0) rotate(-78deg) scale(0.74); opacity: 0.9; }
+  100% { transform: translateX(calc(-50% + 28vw)) translateY(-3%) rotate(-78deg) scale(0.72); opacity: 0.9; }
 }
 
 @keyframes playerPunchDrive {
@@ -1415,4 +1440,17 @@ kbd {
 .music-credit:focus-visible {
   color: var(--amber);
   text-decoration: underline;
+}
+
+@media (max-width: 700px), (orientation: portrait) {
+  .end-screen.victory {
+    place-items: start center;
+    padding: 8vh 0 0;
+  }
+
+  .end-screen.victory .end-card {
+    width: min(88vw, 460px);
+    margin: 0;
+    padding: 18px;
+  }
 }

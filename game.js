@@ -60,6 +60,8 @@ const PLAYER_SPRITES = {
 
 const UPPERCUT_HOLD_MS = 420;
 const UPPERCUT_FULL_CHARGE_MS = 1250;
+const CHARGE_READY_STAMINA = 2;
+const CHARGE_STAMINA_PER_SECOND = 10;
 
 [...Object.values(ENEMY_SPRITES), ...Object.values(PLAYER_SPRITES)].forEach((src) => {
   const image = new Image();
@@ -277,6 +279,7 @@ const state = {
   hits: 0,
   weakHits: 0,
   enemyAttacks: 0,
+  weakSpotReveals: 0,
   attackTimer: null,
   clockTimer: null,
   staminaTimer: null,
@@ -366,6 +369,7 @@ function resetGame() {
     hits: 0,
     weakHits: 0,
     enemyAttacks: 0,
+    weakSpotReveals: 0,
   });
 
   elements.enemy.className = "enemy idle";
@@ -373,6 +377,7 @@ function resetGame() {
   setPlayerPose("guard");
   elements.weakSpot.className = "weak-spot";
   elements.tell.classList.remove("visible");
+  elements.endScreen.classList.remove("victory");
   elements.leftChargeWrap.classList.remove("active");
   elements.rightChargeWrap.classList.remove("active");
   elements.arena.classList.remove("dodge-left", "dodge-right", "duck", "guard");
@@ -425,9 +430,13 @@ async function enemyAttack() {
   state.enemyBlocking = false;
   state.enemyAttacks += 1;
 
-  const attackPool =
-    state.enemyHealth > 72 ? ATTACKS.slice(0, 2) : ATTACKS;
-  const attack = attackPool[Math.floor(Math.random() * attackPool.length)];
+  const teachingReveal = state.enemyAttacks === 3;
+  const repeatReveal = state.enemyAttacks > 3 && state.enemyAttacks % 4 === 0;
+  const attackPool = state.enemyHealth > 72 ? ATTACKS.slice(0, 2) : ATTACKS;
+  const attack =
+    teachingReveal || repeatReveal
+      ? ATTACKS.find((candidate) => candidate.exposesWeakSpot)
+      : attackPool[Math.floor(Math.random() * attackPool.length)];
   const speedFactor = 1 - Math.min(0.32, (100 - state.enemyHealth) / 250);
   const windup = attack.windup * speedFactor;
 
@@ -439,10 +448,14 @@ async function enemyAttack() {
   elements.tell.classList.add("visible");
 
   if (attack.exposesWeakSpot) {
+    state.weakSpotReveals += 1;
     state.enemyVulnerable = true;
     state.vulnerableUntil = performance.now() + windup + 680;
     elements.weakSpot.classList.add("revealed");
-    elements.objective.textContent = "There — his right ribs open when he dips. Drive your LEFT into it.";
+    elements.objective.textContent =
+      state.weakSpotReveals === 1
+        ? "WEAK SPOT FOUND — his right ribs open when he dips. Tap LEFT JAB now."
+        : "He dipped again — punish the glowing right ribs with your LEFT.";
   }
 
   await sleep(windup);
@@ -524,8 +537,16 @@ function defend(type) {
 }
 
 function beginCharge(side) {
-  if (!state.running || state.charge[side] || state.playerStamina < 6) return;
-  state.charge[side] = performance.now();
+  if (
+    !state.running ||
+    state.charge.left ||
+    state.charge.right ||
+    state.playerStamina < 6
+  ) return;
+  state.charge[side] = {
+    startedAt: performance.now(),
+    startingStamina: state.playerStamina,
+  };
   const wrap = side === "left" ? elements.leftChargeWrap : elements.rightChargeWrap;
   elements.playerBody.classList.add(`charging-${side}`);
   wrap.classList.add("active");
@@ -549,7 +570,8 @@ function beginCharge(side) {
 
 function updateCharge(side) {
   if (!state.charge[side] || !state.running) return;
-  const elapsed = performance.now() - state.charge[side];
+  const chargeState = state.charge[side];
+  const elapsed = performance.now() - chargeState.startedAt;
   const charge = clamp(
     (elapsed - UPPERCUT_HOLD_MS) / (UPPERCUT_FULL_CHARGE_MS - UPPERCUT_HOLD_MS),
     0,
@@ -559,7 +581,15 @@ function updateCharge(side) {
   bar.style.width = `${charge * 100}%`;
   elements.playerBody.classList.toggle("uppercut-ready", elapsed >= UPPERCUT_HOLD_MS);
 
-  state.playerStamina = clamp(state.playerStamina - (elapsed >= UPPERCUT_HOLD_MS ? 0.25 : 0.08), 0, 100);
+  const readyCost =
+    Math.min(elapsed, UPPERCUT_HOLD_MS) / UPPERCUT_HOLD_MS * CHARGE_READY_STAMINA;
+  const sustainedCost =
+    Math.max(0, elapsed - UPPERCUT_HOLD_MS) / 1000 * CHARGE_STAMINA_PER_SECOND;
+  state.playerStamina = clamp(
+    chargeState.startingStamina - readyCost - sustainedCost,
+    0,
+    100,
+  );
   updateHud();
 
   if (state.playerStamina <= 0) {
@@ -572,7 +602,7 @@ function updateCharge(side) {
 
 function releasePunch(side) {
   if (!state.running || !state.charge[side]) return;
-  const held = performance.now() - state.charge[side];
+  const held = performance.now() - state.charge[side].startedAt;
   state.charge[side] = null;
   const isUppercut = held >= UPPERCUT_HOLD_MS;
   const charge = isUppercut
@@ -598,7 +628,7 @@ function releasePunch(side) {
   bar.style.width = "0";
   state.punches += 1;
 
-  const staminaCost = isUppercut ? 11 + charge * 9 : 4 + charge * 3;
+  const staminaCost = isUppercut ? 12 + charge * 6 : 5;
   state.playerStamina = clamp(state.playerStamina - staminaCost, 0, 100);
 
   const inRange = !elements.enemy.classList.contains("knockout");
@@ -692,10 +722,11 @@ async function finishFight(won, reason) {
       "attack-uppercut",
     );
     elements.enemy.classList.add("knockout");
+    elements.endScreen.classList.add("victory");
     sound.custom(AUDIO.knockout, 1);
     sound.impact(1);
     setMessage("KNOCKOUT");
-    await sleep(1650);
+    await sleep(1900);
   }
 
   elements.endKicker.textContent = won ? "STAGE 01 COMPLETE" : "THE HOUSE WINS";
