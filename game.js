@@ -24,8 +24,10 @@ const elements = {
   hitFlash: $("#hit-flash"),
   impactBurst: $("#impact-burst"),
   playerHealth: $("#player-health"),
+  playerHpCount: $("#player-hp-count"),
   playerStamina: $("#player-stamina"),
   enemyHealth: $("#enemy-health"),
+  enemyHpCount: $("#enemy-hp-count"),
   injuryMeter: $("#injury-meter"),
   timer: $("#timer"),
   playerBody: $("#player-body"),
@@ -48,6 +50,7 @@ const ENEMY_SPRITES = {
   jab: "./public/assets/opponent-jab.png",
   cross: "./public/assets/opponent-cross.png",
   block: "./public/assets/opponent-block.png",
+  vulnerable: "./public/assets/opponent-vulnerable.png",
 };
 
 const PLAYER_SPRITES = {
@@ -56,12 +59,53 @@ const PLAYER_SPRITES = {
   right: "./public/assets/player-punch-right.png",
   leftUppercut: "./public/assets/player-uppercut-left.png",
   rightUppercut: "./public/assets/player-uppercut-right.png",
+  specialUp: "./public/assets/player-special-up.png",
+  specialDown: "./public/assets/player-special-down.png",
+  specialLeft: "./public/assets/player-special-left.png",
+  specialRight: "./public/assets/player-special-right.png",
 };
 
 const UPPERCUT_HOLD_MS = 420;
 const UPPERCUT_FULL_CHARGE_MS = 1250;
 const CHARGE_READY_STAMINA = 2;
 const CHARGE_STAMINA_PER_SECOND = 10;
+const DIRECTION_CHORD_MS = 140;
+
+const DIRECTIONAL_MOVES = {
+  up: {
+    tap: "RISING STRIKE",
+    special: "RISING BREAKER",
+    tapDamage: 7,
+    specialDamage: 20,
+    tapStamina: 7,
+    specialStamina: 20,
+  },
+  down: {
+    tap: "BODY HOOK",
+    special: "CELLAR SHOT",
+    tapDamage: 8,
+    specialDamage: 18,
+    tapStamina: 7,
+    specialStamina: 18,
+    weakMultiplier: 2.6,
+  },
+  left: {
+    tap: "SLIP HOOK",
+    special: "BACKROOM HOOK",
+    tapDamage: 7,
+    specialDamage: 19,
+    tapStamina: 7,
+    specialStamina: 19,
+  },
+  right: {
+    tap: "STEP CROSS",
+    special: "LAST CALL CROSS",
+    tapDamage: 9,
+    specialDamage: 21,
+    tapStamina: 8,
+    specialStamina: 21,
+  },
+};
 
 [...Object.values(ENEMY_SPRITES), ...Object.values(PLAYER_SPRITES)].forEach((src) => {
   const image = new Image();
@@ -70,6 +114,7 @@ const CHARGE_STAMINA_PER_SECOND = 10;
 
 function setEnemyPose(pose) {
   elements.enemySprite.src = ENEMY_SPRITES[pose] || ENEMY_SPRITES.guard;
+  elements.enemy.classList.toggle("vulnerable-pose", pose === "vulnerable");
 }
 
 function setPlayerPose(pose) {
@@ -280,6 +325,8 @@ const state = {
   weakHits: 0,
   enemyAttacks: 0,
   weakSpotReveals: 0,
+  directionHeld: null,
+  directionTimer: null,
   attackTimer: null,
   clockTimer: null,
   staminaTimer: null,
@@ -322,6 +369,8 @@ function updateHud() {
   setPercent(elements.playerHealth, state.playerHealth);
   setPercent(elements.playerStamina, state.playerStamina);
   setPercent(elements.enemyHealth, state.enemyHealth);
+  elements.playerHpCount.textContent = `${Math.round(state.playerHealth)} HP`;
+  elements.enemyHpCount.textContent = `${Math.round(state.enemyHealth)} HP`;
 
   const minutes = Math.floor(state.timeRemaining / 60);
   const seconds = state.timeRemaining % 60;
@@ -345,6 +394,7 @@ function updateHud() {
 function clearCombatTimers() {
   clearTimeout(state.attackTimer);
   clearTimeout(state.blockTimer);
+  clearTimeout(state.directionTimer);
   clearInterval(state.clockTimer);
   clearInterval(state.staminaTimer);
 }
@@ -370,11 +420,14 @@ function resetGame() {
     weakHits: 0,
     enemyAttacks: 0,
     weakSpotReveals: 0,
+    directionHeld: null,
+    directionTimer: null,
   });
 
   elements.enemy.className = "enemy idle";
   setEnemyPose("guard");
   setPlayerPose("guard");
+  elements.playerSprite.classList.remove("mirrored");
   elements.weakSpot.className = "weak-spot";
   elements.tell.classList.remove("visible");
   elements.endScreen.classList.remove("victory");
@@ -452,6 +505,7 @@ async function enemyAttack() {
     state.enemyVulnerable = true;
     state.vulnerableUntil = performance.now() + windup + 680;
     elements.weakSpot.classList.add("revealed");
+    setEnemyPose("vulnerable");
     elements.objective.textContent =
       state.weakSpotReveals === 1
         ? "WEAK SPOT FOUND — his right ribs open when he dips. Tap LEFT JAB now."
@@ -487,7 +541,7 @@ async function enemyAttack() {
   updateHud();
   await sleep(330);
   elements.enemy.classList.remove(attack.attackClass);
-  setEnemyPose("guard");
+  setEnemyPose(attack.exposesWeakSpot ? "vulnerable" : "guard");
 
   if (state.playerHealth <= 0) {
     finishFight(false, "KNOCKOUT");
@@ -498,6 +552,7 @@ async function enemyAttack() {
     await sleep(470);
     state.enemyVulnerable = false;
     elements.weakSpot.classList.remove("revealed");
+    setEnemyPose("guard");
   }
 
   elements.enemy.classList.add("idle");
@@ -536,6 +591,41 @@ function defend(type) {
   updateHud();
 }
 
+function directionToDefense(direction) {
+  if (direction === "up") return "guard";
+  if (direction === "down") return "duck";
+  return direction;
+}
+
+function beginDirection(direction) {
+  if (!state.running) return;
+  clearTimeout(state.directionTimer);
+  state.directionHeld = direction;
+  state.directionTimer = setTimeout(() => {
+    state.directionTimer = null;
+    if (
+      state.running &&
+      state.directionHeld === direction &&
+      !state.charge.left &&
+      !state.charge.right
+    ) {
+      defend(directionToDefense(direction));
+    }
+  }, DIRECTION_CHORD_MS);
+}
+
+function endDirection(direction) {
+  if (state.directionHeld !== direction) return;
+  if (state.directionTimer) {
+    clearTimeout(state.directionTimer);
+    state.directionTimer = null;
+    if (!state.charge.left && !state.charge.right) {
+      defend(directionToDefense(direction));
+    }
+  }
+  state.directionHeld = null;
+}
+
 function beginCharge(side) {
   if (
     !state.running ||
@@ -546,7 +636,12 @@ function beginCharge(side) {
   state.charge[side] = {
     startedAt: performance.now(),
     startingStamina: state.playerStamina,
+    direction: state.directionHeld,
   };
+  if (state.directionHeld) {
+    clearTimeout(state.directionTimer);
+    state.directionTimer = null;
+  }
   const wrap = side === "left" ? elements.leftChargeWrap : elements.rightChargeWrap;
   elements.playerBody.classList.add(`charging-${side}`);
   wrap.classList.add("active");
@@ -555,6 +650,7 @@ function beginCharge(side) {
     if (
       state.running &&
       state.charge[side] &&
+      !state.charge[side].direction &&
       !state.enemyBusy &&
       !state.enemyVulnerable &&
       Math.random() < 0.72
@@ -602,10 +698,15 @@ function updateCharge(side) {
 
 function releasePunch(side) {
   if (!state.running || !state.charge[side]) return;
-  const held = performance.now() - state.charge[side].startedAt;
+  const chargeState = state.charge[side];
+  const held = performance.now() - chargeState.startedAt;
+  const direction = chargeState.direction;
+  const directionalMove = direction ? DIRECTIONAL_MOVES[direction] : null;
   state.charge[side] = null;
-  const isUppercut = held >= UPPERCUT_HOLD_MS;
-  const charge = isUppercut
+  const isPowerMove = held >= UPPERCUT_HOLD_MS;
+  const isSpecial = Boolean(directionalMove && isPowerMove);
+  const isUppercut = Boolean(!directionalMove && isPowerMove);
+  const charge = isPowerMove
     ? clamp(
         (held - UPPERCUT_HOLD_MS) / (UPPERCUT_FULL_CHARGE_MS - UPPERCUT_HOLD_MS),
         0.35,
@@ -616,28 +717,52 @@ function releasePunch(side) {
   const wrap = side === "left" ? elements.leftChargeWrap : elements.rightChargeWrap;
 
   elements.playerBody.classList.remove(`charging-${side}`, "uppercut-ready");
-  const punchClass = isUppercut
-    ? `player-uppercut-${side}`
-    : `player-punch-${side}`;
-  const pose = isUppercut
-    ? `${side}Uppercut`
-    : side;
+  const punchClass = isSpecial
+    ? `player-special-${direction}`
+    : directionalMove
+      ? `player-combo-${direction}`
+      : isUppercut
+        ? `player-uppercut-${side}`
+        : `player-punch-${side}`;
+  const pose = isSpecial
+    ? `special${direction[0].toUpperCase()}${direction.slice(1)}`
+    : isUppercut
+      ? `${side}Uppercut`
+      : side;
   setPlayerPose(pose);
+  elements.playerSprite.classList.toggle("mirrored", isSpecial && side === "left");
   resetAnimation(elements.playerBody, punchClass);
   wrap.classList.remove("active");
   bar.style.width = "0";
   state.punches += 1;
 
-  const staminaCost = isUppercut ? 12 + charge * 6 : 5;
+  const staminaCost = isSpecial
+    ? directionalMove.specialStamina + charge * 9
+    : directionalMove
+      ? directionalMove.tapStamina
+      : isUppercut
+        ? 12 + charge * 6
+        : 5;
   state.playerStamina = clamp(state.playerStamina - staminaCost, 0, 100);
 
   const inRange = !elements.enemy.classList.contains("knockout");
+  const timedCounter = state.enemyBusy || state.enemyVulnerable;
+  const blockChance = directionalMove
+    ? timedCounter
+      ? isSpecial
+        ? 0.08
+        : 0.16
+      : isSpecial
+        ? 0.78
+        : 0.52
+    : state.enemyBusy
+      ? 0.3
+      : 0.12;
   const blocked =
     !state.enemyVulnerable &&
     (
       state.enemyBlocking ||
-      (state.enemyBusy && Math.random() < 0.3) ||
-      (!state.enemyBusy && Math.random() < 0.12)
+      Math.random() < blockChance
     );
   const weakHit =
     side === "left" &&
@@ -646,14 +771,23 @@ function releasePunch(side) {
 
   if (inRange && (!blocked || weakHit)) {
     state.hits += 1;
-    let damage = isUppercut ? 10 + charge * 10 : 4 + charge * 4;
+    let damage = isSpecial
+      ? directionalMove.specialDamage + charge * 10
+      : directionalMove
+        ? directionalMove.tapDamage + charge * 2
+        : isUppercut
+          ? 10 + charge * 10
+          : 4 + charge * 4;
     if (weakHit) {
-      damage *= 2.35;
+      damage *= directionalMove?.weakMultiplier || 2.35;
+      damage = Math.round(damage);
       state.weakHits += 1;
       elements.enemy.classList.remove("idle");
       resetAnimation(elements.enemy, "weak-stagger");
       setTimeout(
-        () => setMessage(`${isUppercut ? "LEFT UPPERCUT" : "RIB SHOT"} · ${Math.round(damage)} DAMAGE`),
+        () => setMessage(
+          `${isSpecial ? directionalMove.special : directionalMove?.tap || (isUppercut ? "LEFT UPPERCUT" : "RIB SHOT")} · ${Math.round(damage)} DAMAGE`,
+        ),
         360,
       );
       elements.objective.textContent = "You found it. Make him dip, then punish the right ribs.";
@@ -663,22 +797,35 @@ function releasePunch(side) {
         sound.hurt(false, true);
       }, 115);
     } else {
+      damage = Math.round(damage);
       resetAnimation(elements.enemy, "stagger");
-      const strikeName = isUppercut
-        ? `${side.toUpperCase()} UPPERCUT`
-        : side === "left"
-          ? "LEFT JAB"
-          : "RIGHT CROSS";
+      const strikeName = isSpecial
+        ? directionalMove.special
+        : directionalMove
+          ? directionalMove.tap
+          : isUppercut
+            ? `${side.toUpperCase()} UPPERCUT`
+            : side === "left"
+              ? "LEFT JAB"
+              : "RIGHT CROSS";
       setTimeout(() => setMessage(`${strikeName} CONNECTS`), 360);
       sound.custom(side === "left" ? AUDIO.punchLeft : AUDIO.punchRight, 0.82);
       setTimeout(() => {
-        showImpact(isUppercut ? Math.max(0.78, charge) : charge, false);
-        sound.hurt(false, isUppercut || charge > 0.82);
+        showImpact(isSpecial || isUppercut ? Math.max(0.82, charge) : charge, false);
+        sound.hurt(false, isSpecial || isUppercut || charge > 0.82);
       }, 115);
     }
     state.enemyHealth = clamp(state.enemyHealth - damage, 0, 100);
   } else {
-    setMessage(blocked ? "BLOCKED BY HIS ARMS" : "MISSED");
+    setMessage(
+      blocked && isSpecial
+        ? "SPECIAL BLOCKED — COUNTER HIS ATTACK"
+        : blocked && directionalMove
+          ? "COMBO BLOCKED — WAIT FOR HIS MOVE"
+          : blocked
+            ? "BLOCKED BY HIS ARMS"
+            : "MISSED",
+    );
     if (blocked) {
       state.enemyBlocking = true;
       elements.enemy.classList.remove("idle");
@@ -692,12 +839,13 @@ function releasePunch(side) {
   updateHud();
   setTimeout(() => {
     elements.playerBody.classList.remove(punchClass);
+    elements.playerSprite.classList.remove("mirrored");
     setPlayerPose("guard");
     elements.enemy.classList.remove("stagger", "weak-stagger", "blocking");
     state.enemyBlocking = false;
-    setEnemyPose("guard");
+    setEnemyPose(state.enemyVulnerable ? "vulnerable" : "guard");
     if (state.running && !state.enemyBusy) elements.enemy.classList.add("idle");
-  }, isUppercut ? 720 : 560);
+  }, isSpecial ? 820 : isUppercut ? 720 : directionalMove ? 620 : 560);
 
   if (state.enemyHealth <= 0) finishFight(true, "KNOCKOUT");
 }
@@ -745,10 +893,10 @@ function onKeyDown(event) {
   const handled = ["ArrowLeft", "ArrowRight", "ArrowDown", "ArrowUp", "KeyJ", "KeyK"];
   if (handled.includes(event.code)) event.preventDefault();
 
-  if (event.code === "ArrowLeft") defend("left");
-  if (event.code === "ArrowRight") defend("right");
-  if (event.code === "ArrowDown") defend("duck");
-  if (event.code === "ArrowUp") defend("guard");
+  if (event.code === "ArrowLeft") beginDirection("left");
+  if (event.code === "ArrowRight") beginDirection("right");
+  if (event.code === "ArrowDown") beginDirection("down");
+  if (event.code === "ArrowUp") beginDirection("up");
   if (event.code === "KeyJ" && !event.repeat) beginCharge("left");
   if (event.code === "KeyK" && !event.repeat) beginCharge("right");
 }
@@ -756,6 +904,10 @@ function onKeyDown(event) {
 function onKeyUp(event) {
   if (event.code === "KeyJ") releasePunch("left");
   if (event.code === "KeyK") releasePunch("right");
+  if (event.code === "ArrowLeft") endDirection("left");
+  if (event.code === "ArrowRight") endDirection("right");
+  if (event.code === "ArrowDown") endDirection("down");
+  if (event.code === "ArrowUp") endDirection("up");
 }
 
 function bindTouchControls() {
@@ -765,9 +917,23 @@ function bindTouchControls() {
       button.classList.add("pressed");
       button.setPointerCapture?.(event.pointerId);
       navigator.vibrate?.(18);
-      defend(button.dataset.defense);
+      const rawDirection = button.dataset.defense;
+      const direction =
+        rawDirection === "guard"
+          ? "up"
+          : rawDirection === "duck"
+            ? "down"
+            : rawDirection;
+      button.dataset.activeDirection = direction;
+      beginDirection(direction);
     });
-    const release = () => button.classList.remove("pressed");
+    const release = () => {
+      button.classList.remove("pressed");
+      if (button.dataset.activeDirection) {
+        endDirection(button.dataset.activeDirection);
+        delete button.dataset.activeDirection;
+      }
+    };
     button.addEventListener("pointerup", release);
     button.addEventListener("pointercancel", release);
     button.addEventListener("pointerleave", release);

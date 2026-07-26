@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./style.css?v=stage-one-logic-1" />
+    <link rel="stylesheet" href="./style.css?v=directional-specials-1" />
   </head>
   <body>
     <main id="game" class="game" aria-label="Brawlz first-person fighting game">
@@ -25,6 +25,7 @@
             <div class="fighter-label">
               <span class="eyebrow">THE CHALLENGER</span>
               <strong>YOU</strong>
+              <span class="hp-count" id="player-hp-count">100 HP</span>
             </div>
             <div class="bars">
               <div class="bar health" aria-label="Player health">
@@ -46,6 +47,7 @@
             <div class="fighter-label">
               <span class="eyebrow">THE HOUSE</span>
               <strong>MACK “LAST CALL” DOYLE</strong>
+              <span class="hp-count" id="enemy-hp-count">100 HP</span>
             </div>
             <div class="bars">
               <div class="bar health enemy-health" aria-label="Opponent health">
@@ -59,6 +61,7 @@
         <aside class="objective-panel">
           <span class="eyebrow">STAGE 01 · THE LAST CALL</span>
           <p id="objective">Watch his shoulders. Every fighter gives something away.</p>
+          <small class="combo-hint">ARROW + TAP J/K = COMBO · ARROW + HOLD J/K = SPECIAL</small>
         </aside>
 
         <div class="combat-space" id="combat-space">
@@ -110,7 +113,7 @@
           <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="false">
             SOUND ON
           </button>
-          <small>Tap J/K for jab or cross · hold for an uppercut</small>
+          <small>Arrow + tap J/K: combo · arrow + hold/release: special</small>
         </footer>
 
         <nav class="mobile-controls" aria-label="Touch fight controls" style="display: grid">
@@ -132,10 +135,12 @@
             <button type="button" data-punch="left">
               <span>TAP · JAB</span>
               <strong>HOLD ↑ UPPERCUT</strong>
+              <small>+ ARROW = SPECIAL</small>
             </button>
             <button type="button" data-punch="right">
               <span>TAP · CROSS</span>
               <strong>HOLD ↑ UPPERCUT</strong>
+              <small>+ ARROW = SPECIAL</small>
             </button>
           </div>
         </nav>
@@ -176,6 +181,6 @@
         </div>
       </section>
     </main>
-    <script src="./game.js?v=stage-one-logic-1"></script>
+    <script src="./game.js?v=directional-specials-1"></script>
   </body>
 </html>
