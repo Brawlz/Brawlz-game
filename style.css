@@ -425,6 +425,10 @@ kbd {
   filter: saturate(0.62) contrast(1.22) brightness(0.8);
 }
 
+.enemy.injured-4 {
+  filter: saturate(0.58) contrast(1.28) brightness(0.76);
+}
+
 .injury {
   position: absolute;
   z-index: 2;
@@ -637,6 +641,61 @@ kbd {
 
 .player-body.body-guard {
   animation: bodyGuard 0.48s ease-out;
+}
+
+.player-body.player-injured {
+  filter:
+    saturate(0.88)
+    drop-shadow(0 18px 20px rgba(0, 0, 0, 0.58))
+    drop-shadow(0 0 14px rgba(133, 45, 21, 0.24));
+}
+
+.player-body.player-critical {
+  filter:
+    saturate(0.72)
+    brightness(0.88)
+    contrast(1.12)
+    drop-shadow(0 18px 22px rgba(0, 0, 0, 0.68));
+}
+
+.player-body.player-knockout-fall {
+  opacity: 1;
+  animation: playerKnockoutFall 0.78s cubic-bezier(0.24, 0.72, 0.3, 1) forwards;
+}
+
+.player-body.player-knockout-fall img,
+.player-body.player-grounded img {
+  animation: none;
+}
+
+.player-body.player-grounded {
+  left: 51%;
+  bottom: 3%;
+  width: min(58vw, 850px);
+  height: auto;
+  opacity: 1;
+  transform: translateX(-50%);
+  animation: playerGroundedSettle 0.38s ease-out both;
+  filter: drop-shadow(0 11px 11px rgba(0, 0, 0, 0.68));
+}
+
+.player-body.player-grounded img {
+  width: 100%;
+  height: auto;
+}
+
+.player-body.player-grounded::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 5%;
+  right: 4%;
+  bottom: 0;
+  height: 17%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.86), rgba(0, 0, 0, 0.12) 70%, transparent 78%);
+  filter: blur(11px);
+  transform: scaleY(0.56);
 }
 
 .charge-wrap {
@@ -995,6 +1054,18 @@ kbd {
   100% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
 }
 
+@keyframes playerKnockoutFall {
+  0% { transform: translateX(-50%) translateY(0) rotate(0) scale(1); opacity: 1; }
+  34% { transform: translateX(-53%) translateY(4%) rotate(-7deg) scale(1.01); opacity: 1; }
+  100% { transform: translateX(-57%) translateY(48%) rotate(-28deg) scale(0.76); opacity: 0.86; }
+}
+
+@keyframes playerGroundedSettle {
+  0% { transform: translateX(-50%) translateY(-5%) scale(1.04, 0.96); opacity: 0.72; }
+  70% { transform: translateX(-50%) translateY(1%) scale(0.99, 1.01); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+}
+
 @keyframes playerPunchDrive {
   0% { transform: translateX(-50%) translateY(0) scale(1); }
   42%, 62% { transform: translateX(-50%) translateY(-9%) scale(1.12); }
@@ -1271,6 +1342,13 @@ kbd {
     height: min(49vh, 510px);
   }
 
+  .player-body.player-grounded {
+    left: 50%;
+    bottom: 18%;
+    width: min(94vw, 700px);
+    height: auto;
+  }
+
   .charge-wrap {
     bottom: 145px;
     width: 125px;
@@ -1491,6 +1569,13 @@ kbd {
     bottom: 72px;
     width: min(28vw, 270px);
     height: 60vh;
+  }
+
+  .player-body.player-grounded {
+    left: 50%;
+    bottom: 2%;
+    width: min(66vw, 660px);
+    height: auto;
   }
 
   .mobile-controls {

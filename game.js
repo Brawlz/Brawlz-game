@@ -53,7 +53,8 @@ const ENEMY_SPRITES = {
   vulnerable: "./public/assets/opponent-vulnerable.png",
   injured: "./public/assets/opponent-injured.png",
   exhausted: "./public/assets/opponent-exhausted.png",
-  grounded: "./public/assets/opponent-grounded.png",
+  critical: "./public/assets/opponent-critical.png",
+  grounded: "./public/assets/opponent-grounded-bloodied.png",
 };
 
 const PLAYER_SPRITES = {
@@ -66,6 +67,9 @@ const PLAYER_SPRITES = {
   specialDown: "./public/assets/player-special-down.png",
   specialLeft: "./public/assets/player-special-left.png",
   specialRight: "./public/assets/player-special-right.png",
+  injured: "./public/assets/player-injured.png",
+  critical: "./public/assets/player-critical.png",
+  grounded: "./public/assets/player-grounded.png",
 };
 
 const UPPERCUT_HOLD_MS = 420;
@@ -123,8 +127,9 @@ function setEnemyPose(pose) {
 }
 
 function getEnemyRestPose() {
-  if (state.enemyHealth <= 25) return "exhausted";
-  if (state.enemyHealth <= 55) return "injured";
+  if (state.enemyHealth <= 20) return "critical";
+  if (state.enemyHealth <= 45) return "exhausted";
+  if (state.enemyHealth <= 70) return "injured";
   return "guard";
 }
 
@@ -140,6 +145,12 @@ function moveEnemyLane(forceCenter = false) {
 
 function setPlayerPose(pose) {
   elements.playerSprite.src = PLAYER_SPRITES[pose] || PLAYER_SPRITES.guard;
+}
+
+function getPlayerRestPose() {
+  if (state.playerHealth <= 25) return "critical";
+  if (state.playerHealth <= 60) return "injured";
+  return "guard";
 }
 
 const AUDIO = {
@@ -400,19 +411,25 @@ function updateHud() {
   const seconds = state.timeRemaining % 60;
   elements.timer.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 
-  elements.enemy.classList.remove("injured-1", "injured-2", "injured-3");
-  if (state.enemyHealth <= 25) {
+  elements.enemy.classList.remove("injured-1", "injured-2", "injured-3", "injured-4");
+  if (state.enemyHealth <= 20) {
+    elements.enemy.classList.add("injured-4");
+    elements.injuryMeter.textContent = "BLOODIED";
+  } else if (state.enemyHealth <= 45) {
     elements.enemy.classList.add("injured-3");
     elements.injuryMeter.textContent = "BARELY STANDING";
-  } else if (state.enemyHealth <= 50) {
+  } else if (state.enemyHealth <= 70) {
     elements.enemy.classList.add("injured-2");
     elements.injuryMeter.textContent = "BADLY HURT";
-  } else if (state.enemyHealth <= 75) {
+  } else if (state.enemyHealth <= 85) {
     elements.enemy.classList.add("injured-1");
     elements.injuryMeter.textContent = "SHAKEN";
   } else {
     elements.injuryMeter.textContent = "COMPOSED";
   }
+
+  elements.playerBody.classList.toggle("player-injured", state.playerHealth <= 60);
+  elements.playerBody.classList.toggle("player-critical", state.playerHealth <= 25);
 }
 
 function clearCombatTimers() {
@@ -570,6 +587,7 @@ async function enemyAttack() {
     sound.hurt(true, attack.damage >= 20);
   }
 
+  if (state.playerHealth > 0) setPlayerPose(getPlayerRestPose());
   updateHud();
   await sleep(330);
   elements.enemy.classList.remove(attack.attackClass);
@@ -875,7 +893,7 @@ function releasePunch(side) {
   setTimeout(() => {
     elements.playerBody.classList.remove(punchClass);
     elements.playerSprite.classList.remove("mirrored");
-    setPlayerPose("guard");
+    setPlayerPose(getPlayerRestPose());
     elements.enemy.classList.remove("stagger", "weak-stagger", "blocking");
     state.enemyBlocking = false;
     if (
@@ -919,6 +937,25 @@ async function finishFight(won, reason) {
     setEnemyPose("grounded");
     elements.enemy.classList.add("grounded");
     await sleep(1140);
+  } else if (reason === "KNOCKOUT") {
+    setPlayerPose("critical");
+    elements.playerBody.classList.remove(
+      "body-dodge-left",
+      "body-dodge-right",
+      "body-duck",
+      "body-guard",
+      "charging-left",
+      "charging-right",
+      "uppercut-ready",
+    );
+    elements.playerBody.classList.add("player-knockout-fall");
+    sound.custom(AUDIO.knockout, 0.9);
+    sound.impact(0.92);
+    setMessage("YOU'RE DOWN");
+    await sleep(780);
+    elements.playerBody.className = "player-body player-grounded";
+    setPlayerPose("grounded");
+    await sleep(1220);
   }
 
   elements.endKicker.textContent = won ? "STAGE 01 COMPLETE" : "THE HOUSE WINS";
