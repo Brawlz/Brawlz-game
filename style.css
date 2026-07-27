@@ -310,8 +310,12 @@ kbd {
   height: min(78vh, 870px);
   transform: translateX(-50%);
   transform-origin: 50% 88%;
-  transition: filter 0.2s ease;
+  transition: left 0.5s cubic-bezier(0.22, 0.8, 0.3, 1), filter 0.2s ease;
 }
+
+.enemy.lane-left { left: 42%; }
+.enemy.lane-center { left: 50%; }
+.enemy.lane-right { left: 58%; }
 
 .enemy img {
   display: block;
@@ -373,9 +377,40 @@ kbd {
   animation: weakStagger 0.62s ease-out;
 }
 
-.enemy.knockout {
-  animation: knockout 1.55s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+.enemy.knockout-fall {
+  animation: knockoutFall 0.76s cubic-bezier(0.25, 0.72, 0.34, 1) forwards;
   z-index: 12;
+}
+
+.enemy.grounded {
+  left: 64%;
+  bottom: -1%;
+  width: min(54vw, 820px);
+  height: auto;
+  transform: translateX(-50%);
+  transform-origin: 50% 100%;
+  animation: groundedSettle 0.38s ease-out both;
+  z-index: 12;
+}
+
+.enemy.grounded img {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.56));
+}
+
+.enemy.grounded::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 6%;
+  right: 3%;
+  bottom: 1%;
+  height: 18%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.84), rgba(0, 0, 0, 0.14) 68%, transparent 76%);
+  filter: blur(10px);
+  transform: scaleY(0.58);
 }
 
 .enemy.injured-1 {
@@ -948,10 +983,16 @@ kbd {
   70% { transform: translateX(-50%) rotate(-3deg) translateX(-3%); }
 }
 
-@keyframes knockout {
-  20% { transform: translateX(-50%) rotate(8deg) scale(1.02); }
-  72% { transform: translateX(calc(-50% + 28vw)) translateY(0) rotate(-78deg) scale(0.74); opacity: 0.9; }
-  100% { transform: translateX(calc(-50% + 28vw)) translateY(-3%) rotate(-78deg) scale(0.72); opacity: 0.9; }
+@keyframes knockoutFall {
+  0% { transform: translateX(-50%) translateY(0) rotate(0) scale(1); }
+  35% { transform: translateX(-47%) translateY(2%) rotate(8deg) scale(1.01); }
+  100% { transform: translateX(-35%) translateY(36%) rotate(34deg) scale(0.72); opacity: 0.88; }
+}
+
+@keyframes groundedSettle {
+  0% { transform: translateX(-50%) translateY(-5%) scale(1.04, 0.96); opacity: 0.7; }
+  70% { transform: translateX(-50%) translateY(1%) scale(0.99, 1.01); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
 }
 
 @keyframes playerPunchDrive {
@@ -1214,6 +1255,16 @@ kbd {
     height: min(58vh, 630px);
   }
 
+  .enemy.lane-left { left: 44%; }
+  .enemy.lane-right { left: 56%; }
+
+  .enemy.grounded {
+    left: 61%;
+    bottom: 0;
+    width: min(88vw, 680px);
+    height: auto;
+  }
+
   .player-body {
     bottom: 118px;
     width: min(43vw, 300px);
@@ -1427,6 +1478,13 @@ kbd {
 
   .enemy {
     height: 74vh;
+  }
+
+  .enemy.grounded {
+    left: 64%;
+    bottom: -3%;
+    width: min(62vw, 650px);
+    height: auto;
   }
 
   .player-body {

@@ -51,6 +51,9 @@ const ENEMY_SPRITES = {
   cross: "./public/assets/opponent-cross.png",
   block: "./public/assets/opponent-block.png",
   vulnerable: "./public/assets/opponent-vulnerable.png",
+  injured: "./public/assets/opponent-injured.png",
+  exhausted: "./public/assets/opponent-exhausted.png",
+  grounded: "./public/assets/opponent-grounded.png",
 };
 
 const PLAYER_SPRITES = {
@@ -117,6 +120,22 @@ const DIRECTIONAL_MOVES = {
 function setEnemyPose(pose) {
   elements.enemySprite.src = ENEMY_SPRITES[pose] || ENEMY_SPRITES.guard;
   elements.enemy.classList.toggle("vulnerable-pose", pose === "vulnerable");
+}
+
+function getEnemyRestPose() {
+  if (state.enemyHealth <= 25) return "exhausted";
+  if (state.enemyHealth <= 55) return "injured";
+  return "guard";
+}
+
+function moveEnemyLane(forceCenter = false) {
+  const lanes = ["left", "center", "right"];
+  const current = state.enemyLane || "center";
+  const choices = forceCenter ? ["center"] : lanes.filter((lane) => lane !== current);
+  const next = choices[Math.floor(Math.random() * choices.length)];
+  state.enemyLane = next;
+  elements.enemy.classList.remove("lane-left", "lane-center", "lane-right");
+  elements.enemy.classList.add(`lane-${next}`);
 }
 
 function setPlayerPose(pose) {
@@ -327,6 +346,7 @@ const state = {
   weakHits: 0,
   enemyAttacks: 0,
   weakSpotReveals: 0,
+  enemyLane: "center",
   directionHeld: null,
   directionTimer: null,
   attackTimer: null,
@@ -424,11 +444,12 @@ function resetGame() {
     weakHits: 0,
     enemyAttacks: 0,
     weakSpotReveals: 0,
+    enemyLane: "center",
     directionHeld: null,
     directionTimer: null,
   });
 
-  elements.enemy.className = "enemy idle";
+  elements.enemy.className = "enemy idle lane-center";
   setEnemyPose("guard");
   setPlayerPose("guard");
   elements.playerSprite.classList.remove("mirrored");
@@ -490,6 +511,7 @@ async function enemyAttack() {
   state.enemyBusy = true;
   state.enemyBlocking = false;
   state.enemyAttacks += 1;
+  moveEnemyLane();
 
   const teachingReveal = state.enemyAttacks === 3;
   const repeatReveal =
@@ -504,7 +526,7 @@ async function enemyAttack() {
 
   elements.enemy.classList.remove("idle");
   elements.enemy.classList.remove("blocking");
-  setEnemyPose("guard");
+  setEnemyPose(getEnemyRestPose());
   elements.enemy.classList.add(attack.windupClass);
   elements.tellLabel.textContent = attack.label;
   elements.tell.classList.add("visible");
@@ -561,9 +583,10 @@ async function enemyAttack() {
     state.enemyVulnerable = false;
     elements.weakSpot.classList.remove("revealed");
   }
-  setEnemyPose("guard");
+  setEnemyPose(getEnemyRestPose());
 
   elements.enemy.classList.add("idle");
+  if (Math.random() < 0.55) moveEnemyLane();
   state.enemyBusy = false;
   scheduleEnemyAttack();
 }
@@ -753,7 +776,9 @@ function releasePunch(side) {
         : 5;
   state.playerStamina = clamp(state.playerStamina - staminaCost, 0, 100);
 
-  const inRange = !elements.enemy.classList.contains("knockout");
+  const inRange =
+    !elements.enemy.classList.contains("knockout-fall") &&
+    !elements.enemy.classList.contains("grounded");
   const weakSpotOpen = isWeakSpotOpen();
   const timedCounter = state.enemyBusy || weakSpotOpen;
   const blockChance = directionalMove
@@ -853,7 +878,12 @@ function releasePunch(side) {
     setPlayerPose("guard");
     elements.enemy.classList.remove("stagger", "weak-stagger", "blocking");
     state.enemyBlocking = false;
-    setEnemyPose(isWeakSpotOpen() ? "vulnerable" : "guard");
+    if (
+      !elements.enemy.classList.contains("knockout-fall") &&
+      !elements.enemy.classList.contains("grounded")
+    ) {
+      setEnemyPose(isWeakSpotOpen() ? "vulnerable" : getEnemyRestPose());
+    }
     if (state.running && !state.enemyBusy) elements.enemy.classList.add("idle");
   }, isSpecial ? 820 : isUppercut ? 720 : directionalMove ? 620 : 560);
 
@@ -879,12 +909,16 @@ async function finishFight(won, reason) {
       "attack-right",
       "attack-uppercut",
     );
-    elements.enemy.classList.add("knockout");
+    elements.enemy.classList.add("knockout-fall");
     elements.endScreen.classList.add("victory");
     sound.custom(AUDIO.knockout, 1);
     sound.impact(1);
     setMessage("KNOCKOUT");
-    await sleep(1900);
+    await sleep(760);
+    elements.enemy.classList.remove("knockout-fall");
+    setEnemyPose("grounded");
+    elements.enemy.classList.add("grounded");
+    await sleep(1140);
   }
 
   elements.endKicker.textContent = won ? "STAGE 01 COMPLETE" : "THE HOUSE WINS";
